@@ -1,0 +1,7 @@
+[package]
+name = "rustracer"
+version = "0.1.0"
+authors = ["aaale"]
+edition = "2018"
+
+[dependencies]
