@@ -1,11 +1,12 @@
-pub mod vector;
+use rulinalg::matrix;
 
 fn main() {
-    let vec1 = vector::Vector::default();
-    let vec2 = vector::Vector::new(1.0, 1.0, 1.0);
+    let vec = matrix![1.0; 1.0; 1.0; 1.0];
+    let mat = matrix![1.0, 0.0, 0.0, 0.5;
+                      0.0, 1.0, 0.0, 1.0;
+                      0.0, 0.0, 1.0, -0.5;
+                      0.0, 0.0, 0.0, 1.0];
 
-    let vec3 = &vec1 + &vec2;
-
-    println!("Hello, world!");
-    println!("{:?}", vec3);
+    let po = &mat * &vec;
+    println!("{}\n*\n{}\n=\n{}", mat, vec, po);
 }

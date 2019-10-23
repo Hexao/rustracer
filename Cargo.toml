@@ -5,3 +5,5 @@ authors = ["aaale"]
 edition = "2018"
 
 [dependencies]
+image = "0.22.3"
+rulinalg = "0.4.2"
