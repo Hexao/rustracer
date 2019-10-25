@@ -1,12 +1,18 @@
-use rulinalg::matrix;
+#![allow(dead_code, unused_imports, unused_variables)]
+
+mod object;
+mod camera;
+mod sphere;
+mod scene;
+mod ray;
+
+use object::Object;
+use camera::Camera;
+use scene::Scene;
 
 fn main() {
-    let vec = matrix![1.0; 1.0; 1.0; 1.0];
-    let mat = matrix![1.0, 0.0, 0.0, 0.5;
-                      0.0, 1.0, 0.0, 1.0;
-                      0.0, 0.0, 1.0, -0.5;
-                      0.0, 0.0, 0.0, 1.0];
+    let c = Camera::new(1920, 1080, 1.0);
+    let s = Scene::new();
 
-    let po = &mat * &vec;
-    println!("{}\n*\n{}\n=\n{}", mat, vec, po);
+    c.render(&s);
 }
