@@ -1,6 +1,6 @@
 use rulinalg::vector::Vector;
 use crate::object::Object;
-use crate::ray::Ray;
+use crate::math::ray::Ray;
 
 pub struct Scene {
     objects: Vec<Box<dyn Object>>,

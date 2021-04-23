@@ -1,18 +1,19 @@
 use crate::object::Object;
-use crate::ray::Ray;
-use rulinalg::matrix;
+use crate::math::ray::Ray;
+
+use rulinalg::matrix::Matrix;
 use rulinalg::vector;
 
 pub struct Sphere {
-    tra: matrix::Matrix<f32>,
-    inv: matrix::Matrix<f32>,
+    tra: Matrix<f32>,
+    inv: Matrix<f32>,
 }
 
 impl Sphere {
     pub fn new() -> Self {
         Sphere {
-            tra: matrix::Matrix::identity(4),
-            inv: matrix::Matrix::identity(4),
+            tra: Matrix::identity(4),
+            inv: Matrix::identity(4),
         }
     }
 }
@@ -24,7 +25,7 @@ impl Object for Sphere {
 
         o = vector![o[0], o[1], o[2], 1.0];
         o = &self.inv * o;
-        
+
         r = vector![r[0], r[1], r[2], 0.0];
         r = &self.inv * r;
 
@@ -35,20 +36,10 @@ impl Object for Sphere {
         ray
     }
 
-    fn move_global(&mut self, x: f32, y: f32, z: f32) {
-        let mat = matrix::Matrix::new(4, 4, vec![1., 0., 0., x, 0., 1., 0., y, 0., 0., 1., z, 0., 0., 0., 1.]);
-
-        self.tra = mat * &self.tra;
+    fn transform(&mut self, transform: Matrix<f32>) {
+        self.tra = transform * &self.tra;
         self.inv = self.tra.clone().inverse().unwrap();
     }
-
-    fn rotate_x(&mut self, angle: f32) {}
-
-    fn rotate_y(&mut self, angle: f32) {}
-
-    fn rotate_z(&mut self, angle: f32) {}
-
-    fn scale(&mut self, scale: f32) {}
 
     fn intersect(&self, ray: &Ray, impact: &mut vector::Vector<f32>) -> bool {
         let tmp = self.global_to_local(ray.clone());

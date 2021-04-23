@@ -1,12 +1,12 @@
 use crossbeam;
-use crate::ray::Ray;
 use crate::scene::Scene;
+use crate::math::ray::Ray;
 use rulinalg::matrix::Matrix;
 use std::sync::{Arc, RwLock};
 
 pub enum Focal {
     Perspective(f32),
-    Orthographic(f32), 
+    Orthographic(f32),
 }
 
 pub struct Camera {
@@ -32,7 +32,7 @@ impl Camera {
      * Allow to render the Scene **scene** in a file named **file_name**
      *
      * ### Params
-     * **scene** The scene to render  
+     * **scene** The scene to render
      * **file_name** Target file
      */
     pub fn render_in(&self, scene: &Scene, file_name: &str, thread_count: usize) {
@@ -101,7 +101,7 @@ impl Camera {
                 let size = self.x.min(self.y) / focal as usize;
                 let px =  (x as f32 - self.x as f32 / 2.0) / size as f32;
                 let py = -(y as f32 - self.y as f32 / 2.0) / size as f32;
-                
+
                 Ray::new(px, py, 0.0, 0.0, 0.0, 1.0)
             }
         }
