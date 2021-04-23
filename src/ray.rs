@@ -1,5 +1,6 @@
 use rulinalg::vector::Vector;
 
+#[derive(Clone)]
 pub struct Ray {
     origin: Vector<f32>,
     ray: Vector<f32>,
@@ -11,6 +12,14 @@ impl Ray {
             origin: Vector::new(vec![ox, oy, oz]),
             ray: Vector::new(vec![rx, ry, rz]),
         }
+    }
+
+    pub fn origin(&self) -> Vector<f32> {
+        self.origin.clone()
+    }
+
+    pub fn ray(&self) -> Vector<f32> {
+        self.ray.clone()
     }
 
     pub fn normalized(&self) -> Self {
