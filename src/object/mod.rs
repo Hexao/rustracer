@@ -1,15 +1,13 @@
 pub mod sphere;
+pub mod camera;
 
 use rulinalg::vector::Vector;
 use rulinalg::matrix::Matrix;
 use crate::math::ray::Ray;
 
-pub trait Object {
+pub trait Movable {
     fn global_to_local(&self, ray: Ray) -> Ray;
     fn local_to_global(&self, ray: Ray) -> Ray;
-
-    fn intersect(&self, ray: &Ray, impact: &mut Vector<f32>) -> bool;
-
     fn transform(&mut self, transform: Matrix<f32>);
 
     fn move_global(&mut self, x: f32, y: f32, z: f32) {
@@ -68,4 +66,8 @@ pub trait Object {
         ]);
         self.transform(mat);
     }
+}
+
+pub trait Object: Movable {
+    fn intersect(&self, ray: Ray, impact: &mut Vector<f32>) -> bool;
 }

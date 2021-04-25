@@ -1,4 +1,4 @@
-use crate::object::Object;
+use crate::object::{Movable, Object};
 use crate::math::ray::Ray;
 
 use rulinalg::matrix::Matrix;
@@ -18,33 +18,26 @@ impl Sphere {
     }
 }
 
-impl Object for Sphere {
+impl Movable for Sphere {
     fn global_to_local(&self, ray: Ray) -> Ray {
-        let mut o = ray.origin();
-        let mut r = ray.ray();
-
-        o = vector![o[0], o[1], o[2], 1.0];
-        o = &self.inv * o;
-
-        r = vector![r[0], r[1], r[2], 0.0];
-        r = &self.inv * r;
-
-        Ray::new(o[0] / o[3], o[1] / o[3], o[2] / o[3], r[0], r[1], r[2])
+        &self.inv * ray
     }
 
     fn local_to_global(&self, ray: Ray) -> Ray {
-        ray
+        &self.tra * ray
     }
 
     fn transform(&mut self, transform: Matrix<f32>) {
         self.tra = transform * &self.tra;
         self.inv = self.tra.clone().inverse().unwrap();
     }
+}
 
-    fn intersect(&self, ray: &Ray, impact: &mut vector::Vector<f32>) -> bool {
-        let tmp = self.global_to_local(ray.clone());
-        let o = tmp.origin();
-        let r = tmp.ray();
+impl Object for Sphere {
+    fn intersect(&self, ray: Ray, _impact: &mut vector::Vector<f32>) -> bool {
+        let ray = self.global_to_local(ray);
+        let o = ray.origin();
+        let r = ray.ray();
 
         let a = r[0] * r[0] + r[1] * r[1] + r[2] * r[2];
         let b = 2.0 * (r[0] * o[0] + r[1] * o[1] + r[2] * o[2]);

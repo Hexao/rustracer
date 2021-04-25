@@ -1,8 +1,10 @@
 use crossbeam;
+use std::sync::Arc;
+use rulinalg::matrix::Matrix;
+
 use crate::scene::Scene;
 use crate::math::ray::Ray;
-use rulinalg::matrix::Matrix;
-use std::sync::{Arc, RwLock};
+use crate::object::Movable;
 
 pub enum Focal {
     Perspective(f32),
@@ -36,48 +38,51 @@ impl Camera {
      * **file_name** Target file
      */
     pub fn render_in(&self, scene: &Scene, file_name: &str, thread_count: usize) {
-        let buf = Arc::new(std::iter::repeat_with(|| RwLock::new(0u8)).take(self.x * self.y).collect::<Vec<_>>());
-
+        let mut buf = Vec::with_capacity(self.x * self.y);
         let arc_self = Arc::from(self);
         let scene = Arc::from(scene);
         println!("render scene...");
 
         crossbeam::scope(|scope| {
             let mut threads = vec![];
-            let step = arc_self.y / thread_count;
+            let step = arc_self.y / thread_count + 1;
 
             for thread_id in 0..thread_count {
                 let start_row = thread_id * step;
                 let stop_row = (thread_id + 1) * step;
 
                 let scene = scene.clone();
-                let buf = buf.clone();
                 let arc_self = arc_self.clone();
+                let mut buf = Vec::with_capacity(step * arc_self.x);
 
                 threads.push(scope.spawn(move |_| {
                     for y in start_row..stop_row {
-                        for x in 0..arc_self.x {
-                            let r = arc_self.get_ray(x, y);
+                        if y >= arc_self.y {
+                            break;
+                        }
 
-                            let mut cell = buf[y * arc_self.x + x].write().unwrap();
-                            *cell = if scene.intersect(r) { 255 } else { 0 };
+                        for x in 0..arc_self.x {
+                            let r = arc_self.local_to_global(arc_self.get_ray(x, y));
+
+                            buf.push(
+                                if scene.intersect(r) { 255 } else { 0 }
+                            );
                         }
                     }
+
+                    buf
                 }));
             }
 
             for thread in threads {
-                thread.join().unwrap();
+                let mut partial_data = thread.join().unwrap();
+                buf.append(&mut partial_data);
             }
         }).unwrap();
 
-        let buf: Vec<u8> = buf.iter().map(|cell|
-            *cell.read().unwrap()
-        ).collect();
-
         println!("scene rendered !");
         let name = format!("{}.png", file_name);
-        let res = image::save_buffer(name, buf.as_slice(), self.x as u32, self.y as u32, image::ColorType::Gray(8));
+        image::save_buffer(name, buf.as_slice(), self.x as u32, self.y as u32, image::ColorType::Gray(8)).unwrap();
     }
 
     /// Allow to render the Scene **scene** in a file named image.png
@@ -105,5 +110,20 @@ impl Camera {
                 Ray::new(px, py, 0.0, 0.0, 0.0, 1.0)
             }
         }
+    }
+}
+
+impl Movable for Camera {
+    fn global_to_local(&self, ray: Ray) -> Ray {
+        &self.inv * ray
+    }
+
+    fn local_to_global(&self, ray: Ray) -> Ray {
+        &self.tra * ray
+    }
+
+    fn transform(&mut self, transform: Matrix<f32>) {
+        self.tra = transform * &self.tra;
+        self.inv = self.tra.clone().inverse().unwrap();
     }
 }

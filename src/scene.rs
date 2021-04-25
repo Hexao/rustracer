@@ -1,4 +1,5 @@
 use rulinalg::vector::Vector;
+
 use crate::object::Object;
 use crate::math::ray::Ray;
 
@@ -20,7 +21,7 @@ impl Scene {
     pub fn intersect(&self, ray: Ray) -> bool {
         for obj in self.objects.iter() {
             let mut impact = Vector::zeros(3);
-            if obj.intersect(&ray, &mut impact) {
+            if obj.intersect(ray.clone(), &mut impact) {
                 return true
             }
         }
