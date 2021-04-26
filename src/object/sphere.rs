@@ -1,4 +1,5 @@
 use crate::object::{Movable, Object};
+use crate::material::Material;
 use crate::math::ray::Ray;
 
 use rulinalg::matrix::Matrix;
@@ -7,13 +8,16 @@ use rulinalg::vector::Vector;
 pub struct Sphere {
     tra: Matrix<f32>,
     inv: Matrix<f32>,
+
+    mat: Box<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new() -> Self {
+    pub fn new(mat: Box<dyn Material>) -> Self {
         Sphere {
             tra: Matrix::identity(4),
             inv: Matrix::identity(4),
+            mat,
         }
     }
 }
@@ -64,5 +68,13 @@ impl Object for Sphere {
         *impact = self.local_to_global_point(impact.clone());
 
         d >= 0.
+    }
+
+    fn mat(&self) -> &Box<dyn Material> {
+        &self.mat
+    }
+
+    fn mat_mut(&mut self) -> &mut Box<dyn Material> {
+        &mut self.mat
     }
 }

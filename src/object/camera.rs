@@ -1,10 +1,12 @@
 use crossbeam;
 use std::sync::Arc;
 use rulinalg::matrix::Matrix;
+use rulinalg::vector::Vector;
 
 use crate::scene::Scene;
 use crate::math::ray::Ray;
 use crate::object::Movable;
+use crate::material::Color;
 
 pub enum Focal {
     Perspective(f32),
@@ -62,11 +64,15 @@ impl Camera {
                         }
 
                         for x in 0..arc_self.x {
-                            let r = arc_self.local_to_global_ray(arc_self.get_ray(x, y));
+                            let ray = arc_self.local_to_global_ray(arc_self.get_ray(x, y));
+                            let mut impact = Vector::zeros(3);
 
-                            buf.push(
-                                if scene.intersect(r) { 255 } else { 0 }
-                            );
+                            buf.push(match scene.intersect(ray, &mut impact) {
+                                Some(object) => {
+                                    object.impact_color(&impact)
+                                },
+                                None => Color::new_gray(0),
+                            });
                         }
                     }
 
@@ -75,14 +81,16 @@ impl Camera {
             }
 
             for thread in threads {
-                let mut partial_data = thread.join().unwrap();
-                buf.append(&mut partial_data);
+                let partial_data = thread.join().unwrap();
+                for pix in partial_data {
+                    buf.append(&mut pix.to_vec());
+                }
             }
         }).unwrap();
 
         println!("scene rendered !");
         let name = format!("{}.png", file_name);
-        image::save_buffer(name, buf.as_slice(), self.x as u32, self.y as u32, image::ColorType::Gray(8)).unwrap();
+        image::save_buffer(name, buf.as_slice(), self.x as u32, self.y as u32, image::ColorType::RGB(8)).unwrap();
     }
 
     /// Allow to render the Scene **scene** in a file named image.png

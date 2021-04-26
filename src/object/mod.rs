@@ -6,6 +6,7 @@ use rulinalg::matrix::Matrix;
 use rulinalg::vector;
 
 use crate::math::ray::Ray;
+use crate::material::{Material, Color};
 
 pub trait Movable {
     fn tra(&self) -> &Matrix<f32>;
@@ -15,8 +16,8 @@ pub trait Movable {
     fn inv_mut(&mut self) -> &mut Matrix<f32>;
 
     fn local_to_global_ray(&self, ray: Ray) -> Ray {
-        let origin = self.local_to_global_point(ray.origin());
-        let vector = self.local_to_global_vector(ray.vector());
+        let origin = self.local_to_global_point(ray.origin().clone());
+        let vector = self.local_to_global_vector(ray.vector().clone());
 
         Ray::new(origin[0], origin[1], origin[2], vector[0], vector[1], vector[2])
     }
@@ -40,8 +41,8 @@ pub trait Movable {
     }
 
     fn global_to_local_ray(&self, ray: Ray) -> Ray {
-        let origin = self.global_to_local_point(ray.origin());
-        let vector = self.global_to_local_vector(ray.vector());
+        let origin = self.global_to_local_point(ray.origin().clone());
+        let vector = self.global_to_local_vector(ray.vector().clone());
 
         Ray::new(origin[0], origin[1], origin[2], vector[0], vector[1], vector[2])
     }
@@ -133,4 +134,11 @@ pub trait Movable {
 
 pub trait Object: Movable {
     fn intersect(&self, ray: Ray, impact: &mut Vector<f32>) -> bool;
+
+    fn mat(&self) -> &Box<dyn Material>;
+    fn mat_mut(&mut self) -> &mut Box<dyn Material>;
+
+    fn impact_color(&self, impact: &Vector<f32>) -> Color {
+        self.mat().color(impact)
+    }
 }

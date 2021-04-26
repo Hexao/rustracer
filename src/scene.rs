@@ -1,4 +1,5 @@
 use rulinalg::vector::Vector;
+use rulinalg::norm::Euclidean;
 
 use crate::object::Object;
 use crate::math::ray::Ray;
@@ -18,15 +19,24 @@ impl Scene {
         self.objects.push(object);
     }
 
-    pub fn intersect(&self, ray: Ray) -> bool {
+    pub fn intersect(&self, ray: Ray, impact: &mut Vector<f32>) -> Option<&Box<dyn Object>> {
+        let mut hit = None;
+        let mut dist = f32::INFINITY;
+
         for obj in self.objects.iter() {
-            let mut impact = Vector::zeros(3);
-            if obj.intersect(ray.clone(), &mut impact) {
-                return true
+            let mut new_impact = Vector::zeros(3);
+            if obj.intersect(ray.clone(), &mut new_impact) {
+                let new_dist = (&new_impact - ray.origin()).norm(Euclidean);
+
+                if new_dist < dist {
+                    *impact = new_impact;
+                    dist = new_dist;
+                    hit = Some(obj);
+                }
             }
         }
 
-        false
+        hit
     }
 }
 

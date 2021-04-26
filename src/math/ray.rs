@@ -14,12 +14,12 @@ impl Ray {
         }
     }
 
-    pub fn origin(&self) -> Vector<f32> {
-        self.origin.clone()
+    pub fn origin(&self) -> &Vector<f32> {
+        &self.origin
     }
 
-    pub fn vector(&self) -> Vector<f32> {
-        self.vector.clone()
+    pub fn vector(&self) -> &Vector<f32> {
+        &self.vector
     }
 
     pub fn normalized(&self) -> Self {
