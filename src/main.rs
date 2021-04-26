@@ -28,31 +28,31 @@ fn main() {
         Color::WHITE,
         Color::FULL_WHITE,
         255,
-        10.0
+        75.0
     );
 
     let red_mat = Material::new(
         Color::DARK_RED,
         Color::RED,
-        Color::FULL_RED,
+        Color::new(255, 120, 120),
         255,
-        10.0
+        50.0
     );
 
     let green_mat = Material::new(
         Color::DARK_GREEN,
         Color::GREEN,
-        Color::FULL_GREEN,
+        Color::new(120, 255, 120),
         255,
-        10.0
+        50.0
     );
 
     let blue_mat = Material::new(
         Color::DARK_BLUE,
         Color::BLUE,
-        Color::FULL_BLUE,
+        Color::new(120, 120, 255),
         255,
-        10.0
+        50.0
     );
 
     let color: Box<dyn MatProvider> = Box::new(SimpleMat::new(white_mat));
@@ -90,7 +90,8 @@ fn main() {
     sphere.move_global(-7.5, 0.0, 15.0);
     s.add_object(sphere);
 
-    let light: Box<dyn Light> = Box::new(PointLight::new(Color::WHITE, Color::FULL_WHITE));
+    let mut light: Box<dyn Light> = Box::new(PointLight::new(Color::WHITE, Color::FULL_WHITE));
+    light.move_global(7.5, 7.5, 0.0);
     s.add_light(light);
 
     let start = std::time::Instant::now();
