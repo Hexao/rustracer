@@ -62,7 +62,7 @@ impl Camera {
                         }
 
                         for x in 0..arc_self.x {
-                            let r = arc_self.local_to_global(arc_self.get_ray(x, y));
+                            let r = arc_self.local_to_global_ray(arc_self.get_ray(x, y));
 
                             buf.push(
                                 if scene.intersect(r) { 255 } else { 0 }
@@ -114,16 +114,19 @@ impl Camera {
 }
 
 impl Movable for Camera {
-    fn global_to_local(&self, ray: Ray) -> Ray {
-        &self.inv * ray
+    fn tra(&self) -> &Matrix<f32> {
+        &self.tra
     }
 
-    fn local_to_global(&self, ray: Ray) -> Ray {
-        &self.tra * ray
+    fn tra_mut(&mut self) -> &mut Matrix<f32> {
+        &mut self.tra
     }
 
-    fn transform(&mut self, transform: Matrix<f32>) {
-        self.tra = transform * &self.tra;
-        self.inv = self.tra.clone().inverse().unwrap();
+    fn inv(&self) -> &Matrix<f32> {
+        &self.inv
+    }
+
+    fn inv_mut(&mut self) -> &mut Matrix<f32> {
+        &mut self.inv
     }
 }
