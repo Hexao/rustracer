@@ -1,30 +1,62 @@
-use rulinalg::vector::Vector;
-use rulinalg::norm::Euclidean;
-
-use crate::object::Object;
+use crate::material::Color;
+use crate::object::{
+    light::Light,
+    Object,
+};
 use crate::math::ray::Ray;
+
+use rulinalg::norm::Euclidean;
+use rulinalg::vector::Vector;
 
 pub struct Scene {
     objects: Vec<Box<dyn Object>>,
+    lights: Vec<Box<dyn Light>>,
+
+    background: Color,
+    ambiant: Color,
 }
 
 impl Scene {
     pub fn new() -> Self {
         Scene {
             objects: Vec::default(),
+            lights: Vec::default(),
+            background: Color::SKY,
+            ambiant: Color::GRAY,
         }
+    }
+
+    pub fn new_custom(background: Color, ambiant: Color) -> Self {
+        Scene {
+            objects: Vec::default(),
+            lights: Vec::default(),
+            background, ambiant
+        }
+    }
+
+    pub fn background(&self) -> Color {
+        self.background
+    }
+
+    pub fn ambiant(&self) -> Color {
+        self.ambiant
     }
 
     pub fn add_object(&mut self, object: Box<dyn Object>) {
         self.objects.push(object);
     }
 
-    pub fn intersect(&self, ray: Ray, impact: &mut Vector<f32>) -> Option<&Box<dyn Object>> {
+    pub fn add_light(&mut self, light: Box<dyn Light>) {
+        self.lights.push(light);
+    }
+
+    pub fn closer(&self, ray: &Ray, impact: &mut Vector<f32>) -> Option<&Box<dyn Object>> {
         let mut hit = None;
         let mut dist = f32::INFINITY;
 
         for obj in self.objects.iter() {
             let mut new_impact = Vector::zeros(3);
+
             if obj.intersect(ray.clone(), &mut new_impact) {
                 let new_dist = (&new_impact - ray.origin()).norm(Euclidean);
 
@@ -37,6 +69,10 @@ impl Scene {
         }
 
         hit
+    }
+
+    pub fn lights(&self) -> &Vec<Box<dyn Light>> {
+        &self.lights
     }
 }
 

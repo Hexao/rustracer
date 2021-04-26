@@ -1,19 +1,22 @@
+use crate::material::{MatProvider, Material};
 use crate::object::{Movable, Object};
-use crate::material::Material;
 use crate::math::ray::Ray;
 
+use rulinalg::norm::Euclidean;
 use rulinalg::matrix::Matrix;
 use rulinalg::vector::Vector;
+use std::f32::consts::TAU;
+use std::f32::consts::PI;
 
 pub struct Sphere {
     tra: Matrix<f32>,
     inv: Matrix<f32>,
 
-    mat: Box<dyn Material>,
+    mat: Box<dyn MatProvider>,
 }
 
 impl Sphere {
-    pub fn new(mat: Box<dyn Material>) -> Self {
+    pub fn new(mat: Box<dyn MatProvider>) -> Self {
         Sphere {
             tra: Matrix::identity(4),
             inv: Matrix::identity(4),
@@ -42,7 +45,7 @@ impl Movable for Sphere {
 
 impl Object for Sphere {
     fn intersect(&self, ray: Ray, impact: &mut Vector<f32>) -> bool {
-        let ray = self.global_to_local_ray(ray);
+        let ray = self.global_to_local_ray(&ray);
         let origin = ray.origin();
         let vector = ray.vector();
 
@@ -65,16 +68,33 @@ impl Object for Sphere {
             }
         }
 
-        *impact = self.local_to_global_point(impact.clone());
+        *impact = self.local_to_global_point(impact);
 
         d >= 0.
     }
 
-    fn mat(&self) -> &Box<dyn Material> {
-        &self.mat
+    fn normal(&self, at: Vector<f32>, observer: Vector<f32>) -> Ray {
+        let local = self.global_to_local_point(&at);
+        let normal = if self.global_to_local_point(&observer).norm(Euclidean) > 1.0 {
+            local.clone()
+        } else {
+            -local.clone()
+        };
+
+        let ray = Ray::new(
+            local[0], local[1], local[2],
+            normal[0], normal[1], normal[2]
+        );
+
+        self.local_to_global_ray(&ray).normalized()
     }
 
-    fn mat_mut(&mut self) -> &mut Box<dyn Material> {
-        &mut self.mat
+    fn material_at(&self, impact: &Vector<f32>) -> &Material {
+        let impact = self.global_to_local_point(impact);
+
+        let x = impact[1].atan2(impact[0]) / TAU + 0.5;
+        let y = impact[2] / PI;
+
+        self.mat.material(x, y)
     }
 }

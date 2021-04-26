@@ -1,12 +1,13 @@
-use crossbeam;
-use std::sync::Arc;
+use crate::object::{Movable, Object};
+use crate::material::Color;
+use crate::math::ray::Ray;
+use crate::scene::Scene;
+
 use rulinalg::matrix::Matrix;
 use rulinalg::vector::Vector;
+use std::sync::Arc;
+use crossbeam;
 
-use crate::scene::Scene;
-use crate::math::ray::Ray;
-use crate::object::Movable;
-use crate::material::Color;
 
 pub enum Focal {
     Perspective(f32),
@@ -64,14 +65,12 @@ impl Camera {
                         }
 
                         for x in 0..arc_self.x {
-                            let ray = arc_self.local_to_global_ray(arc_self.get_ray(x, y));
+                            let ray = arc_self.local_to_global_ray(&arc_self.get_ray(x, y));
                             let mut impact = Vector::zeros(3);
 
-                            buf.push(match scene.intersect(ray, &mut impact) {
-                                Some(object) => {
-                                    object.impact_color(&impact)
-                                },
-                                None => Color::new_gray(0),
+                            buf.push(match scene.closer(&ray, &mut impact) {
+                                Some(object) => self.impact_color(&ray, object, &impact, &scene, 0),
+                                None => scene.background(),
                             });
                         }
                     }
@@ -118,6 +117,30 @@ impl Camera {
                 Ray::new(px, py, 0.0, 0.0, 0.0, 1.0)
             }
         }
+    }
+
+    fn impact_color(&self, ray: &Ray, object: &Box<dyn Object>, impact: &Vector<f32>, scene: &Scene, _profondeur: usize) -> Color {
+        let mut specular = Color::FULL_BLACK;
+        let material = object.material_at(impact);
+        let mut diffuse = material.ambient * scene.ambiant();
+        let normal = object.normal(impact.clone(), ray.origin().clone());
+
+        for light in scene.lights() {
+            if !light.illuminate(impact) {
+                continue;
+            }
+
+            let vec_light = light.vec_to_light(impact);
+            let alpha = vec_light.dot(normal.vector());
+            if alpha <= 0.0 {
+                continue;
+            }
+
+            diffuse += material.diffuse * light.diffuse() * alpha;
+            specular += material.specular * (normal.vector() * 2.0 * alpha - vec_light).dot(&-ray.vector()).powf(material.shininess) * light.specular() * alpha;
+        }
+
+        diffuse + specular
     }
 }
 

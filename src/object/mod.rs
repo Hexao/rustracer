@@ -1,12 +1,13 @@
 pub mod sphere;
 pub mod camera;
+pub mod light;
+
+use crate::material::Material;
+use crate::math::ray::Ray;
 
 use rulinalg::vector::Vector;
 use rulinalg::matrix::Matrix;
 use rulinalg::vector;
-
-use crate::math::ray::Ray;
-use crate::material::{Material, Color};
 
 pub trait Movable {
     fn tra(&self) -> &Matrix<f32>;
@@ -15,14 +16,14 @@ pub trait Movable {
     fn inv(&self) -> &Matrix<f32>;
     fn inv_mut(&mut self) -> &mut Matrix<f32>;
 
-    fn local_to_global_ray(&self, ray: Ray) -> Ray {
-        let origin = self.local_to_global_point(ray.origin().clone());
-        let vector = self.local_to_global_vector(ray.vector().clone());
+    fn local_to_global_ray(&self, ray: &Ray) -> Ray {
+        let origin = self.local_to_global_point(ray.origin());
+        let vector = self.local_to_global_vector(ray.vector());
 
         Ray::new(origin[0], origin[1], origin[2], vector[0], vector[1], vector[2])
     }
 
-    fn local_to_global_point(&self, pts: Vector<f32>) -> Vector<f32> {
+    fn local_to_global_point(&self, pts: &Vector<f32>) -> Vector<f32> {
         let mut pts = vector![pts[0], pts[1], pts[2], 1.0];
         pts = self.tra() * pts;
 
@@ -33,21 +34,21 @@ pub trait Movable {
         ]
     }
 
-    fn local_to_global_vector(&self, vec: Vector<f32>) -> Vector<f32> {
+    fn local_to_global_vector(&self, vec: &Vector<f32>) -> Vector<f32> {
         let mut vec = vector![vec[0], vec[1], vec[2], 0.0];
         vec = self.tra() * vec;
 
         vector![vec[0], vec[1], vec[2]]
     }
 
-    fn global_to_local_ray(&self, ray: Ray) -> Ray {
-        let origin = self.global_to_local_point(ray.origin().clone());
-        let vector = self.global_to_local_vector(ray.vector().clone());
+    fn global_to_local_ray(&self, ray: &Ray) -> Ray {
+        let origin = self.global_to_local_point(ray.origin());
+        let vector = self.global_to_local_vector(ray.vector());
 
         Ray::new(origin[0], origin[1], origin[2], vector[0], vector[1], vector[2])
     }
 
-    fn global_to_local_point(&self, pts: Vector<f32>) -> Vector<f32> {
+    fn global_to_local_point(&self, pts: &Vector<f32>) -> Vector<f32> {
         let mut pts = vector![pts[0], pts[1], pts[2], 1.0];
         pts = self.inv() * pts;
 
@@ -58,7 +59,7 @@ pub trait Movable {
         ]
     }
 
-    fn global_to_local_vector(&self, vec: Vector<f32>) -> Vector<f32> {
+    fn global_to_local_vector(&self, vec: &Vector<f32>) -> Vector<f32> {
         let mut vec = vector![vec[0], vec[1], vec[2], 0.0];
         vec = self.inv() * vec;
 
@@ -134,11 +135,6 @@ pub trait Movable {
 
 pub trait Object: Movable {
     fn intersect(&self, ray: Ray, impact: &mut Vector<f32>) -> bool;
-
-    fn mat(&self) -> &Box<dyn Material>;
-    fn mat_mut(&mut self) -> &mut Box<dyn Material>;
-
-    fn impact_color(&self, impact: &Vector<f32>) -> Color {
-        self.mat().color(impact)
-    }
+    fn normal(&self, at: Vector<f32>, observer: Vector<f32>) -> Ray;
+    fn material_at(&self, impact: &Vector<f32>) -> &Material;
 }

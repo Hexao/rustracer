@@ -1,21 +1,19 @@
-use rulinalg::vector::Vector;
-
-use crate::material::{Material, Color};
+use crate::material::{MatProvider, Material};
 
 #[derive(Clone, Copy)]
 pub struct SimpleMat {
-    color: Color
+    material: Material
 }
 
 impl SimpleMat {
-    pub fn new(color: Color) -> Self {
-        Self { color }
+    pub fn new(material: Material) -> Self {
+        Self { material }
     }
 }
 
-impl Material for SimpleMat {
-    fn color(&self, _impact: &Vector<f32>) -> Color {
-        self.color
+impl MatProvider for SimpleMat {
+    fn material(&self, _x: f32, _y: f32) -> &Material {
+        &self.material
     }
 
     fn has_secondary_color(&self) -> bool {

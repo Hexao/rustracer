@@ -1,3 +1,4 @@
+use rulinalg::norm::Euclidean;
 use rulinalg::vector::Vector;
 
 #[derive(Clone)]
@@ -22,12 +23,12 @@ impl Ray {
         &self.vector
     }
 
-    pub fn normalized(&self) -> Self {
-        let ray_norm = self.vector.norm(rulinalg::norm::Euclidean);
+    pub fn normalized(self) -> Self {
+        let ray_norm = self.vector.norm(Euclidean);
 
         Ray {
-            origin: self.origin.clone(),
-            vector: self.vector.clone() / ray_norm,
+            origin: self.origin,
+            vector: self.vector / ray_norm,
         }
     }
 }
