@@ -21,6 +21,8 @@ use scene::Scene;
 
 fn main() {
     let c = Camera::new(1920, 1080, Focal::Perspective(1.75));
+    // let c = Camera::new(7680, 4320, Focal::Perspective(1.75));
+    // let c = Camera::new(720, 480, Focal::Perspective(1.75));
     let mut s = Scene::new();
 
     let white_mat = Material::new(
@@ -95,7 +97,7 @@ fn main() {
     s.add_light(light);
 
     let start = std::time::Instant::now();
-    c.render(&s, 6);
+    c.render(&s, 18);
 
     let dur = start.elapsed().as_secs_f64();
     println!("rendered in {:.2} sec", dur);

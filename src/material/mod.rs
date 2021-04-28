@@ -7,7 +7,7 @@ pub trait MatProvider {
     fn has_secondary_color(&self) -> bool;
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct Color {
     pub red: u8,
     pub green: u8,

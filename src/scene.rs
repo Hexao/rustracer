@@ -57,7 +57,7 @@ impl Scene {
         for obj in self.objects.iter() {
             let mut new_impact = Vector::zeros(3);
 
-            if obj.intersect(ray.clone(), &mut new_impact) {
+            if obj.intersect(&ray, &mut new_impact) {
                 let new_dist = (&new_impact - ray.origin()).norm(Euclidean);
 
                 if new_dist < dist {

@@ -123,7 +123,7 @@ impl Camera {
         let mut specular = Color::FULL_BLACK;
         let material = object.material_at(impact);
         let mut diffuse = material.ambient * scene.ambiant();
-        let normal = object.normal(impact.clone(), ray.origin().clone());
+        let normal = object.normal(impact, ray.origin());
 
         for light in scene.lights() {
             if !light.illuminate(impact) {

@@ -44,8 +44,8 @@ impl Movable for Sphere {
 }
 
 impl Object for Sphere {
-    fn intersect(&self, ray: Ray, impact: &mut Vector<f32>) -> bool {
-        let ray = self.global_to_local_ray(&ray);
+    fn intersect(&self, ray: &Ray, impact: &mut Vector<f32>) -> bool {
+        let ray = self.global_to_local_ray(ray);
         let origin = ray.origin();
         let vector = ray.vector();
 
@@ -73,18 +73,19 @@ impl Object for Sphere {
         d >= 0.
     }
 
-    fn normal(&self, at: Vector<f32>, observer: Vector<f32>) -> Ray {
-        let local = self.global_to_local_point(&at);
-        let normal = if self.global_to_local_point(&observer).norm(Euclidean) > 1.0 {
-            local.clone()
+    fn normal(&self, at: &Vector<f32>, observer: &Vector<f32>) -> Ray {
+        let local = self.global_to_local_point(at);
+        let ray = if self.global_to_local_point(observer).norm(Euclidean) > 1.0 {
+            Ray::new(
+                local[0], local[1], local[2],
+                local[0], local[1], local[2]
+            )
         } else {
-            -local.clone()
+            Ray::new(
+                local[0], local[1], local[2],
+                -local[0], -local[1], -local[2]
+            )
         };
-
-        let ray = Ray::new(
-            local[0], local[1], local[2],
-            normal[0], normal[1], normal[2]
-        );
 
         self.local_to_global_ray(&ray).normalized()
     }

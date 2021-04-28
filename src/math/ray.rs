@@ -1,7 +1,6 @@
 use rulinalg::norm::Euclidean;
 use rulinalg::vector::Vector;
 
-#[derive(Clone)]
 pub struct Ray {
     origin: Vector<f32>,
     vector: Vector<f32>,
