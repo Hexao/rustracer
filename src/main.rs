@@ -20,10 +20,12 @@ use material::{
 use scene::Scene;
 
 fn main() {
-    let c = Camera::new(1920, 1080, Focal::Perspective(1.75));
-    // let c = Camera::new(7680, 4320, Focal::Perspective(1.75));
-    // let c = Camera::new(720, 480, Focal::Perspective(1.75));
+    let mut c = Camera::new(1920, 1080, Focal::Perspective(1.7));
+    // let c = Camera::new(7680, 4320, Focal::Perspective(1.7));
+    // let c = Camera::new(720, 480, Focal::Perspective(1.7));
     let mut s = Scene::new();
+
+    c.set_flags(0);
 
     let white_mat = Material::new(
         Color::GRAY,
@@ -93,11 +95,11 @@ fn main() {
     s.add_object(sphere);
 
     let mut light: Box<dyn Light> = Box::new(PointLight::new(Color::WHITE, Color::FULL_WHITE));
-    light.move_global(7.5, 7.5, 0.0);
+    light.move_global(2.5, 7.5, 0.0);
     s.add_light(light);
 
     let start = std::time::Instant::now();
-    c.render(&s, 18);
+    c.render(&s, 6);
 
     let dur = start.elapsed().as_secs_f64();
     println!("rendered in {:.2} sec", dur);

@@ -45,7 +45,7 @@ impl Movable for Sphere {
 
 impl Object for Sphere {
     fn intersect(&self, ray: &Ray, impact: &mut Vector<f32>) -> bool {
-        let ray = self.global_to_local_ray(ray);
+        let ray = self.global_to_local_ray(ray.clone());
         let origin = ray.origin();
         let vector = ray.vector();
 
@@ -59,23 +59,24 @@ impl Object for Sphere {
             let x1 = (-b - d_sqrt) / (2.0 * a);
             let x2 = (-b + d_sqrt) / (2.0 * a);
 
-            if x1 < 0. && x2 < 0. {
+            let imp = if x1 < 0. && x2 < 0. {
                 return false;
             } else if x1 < x2 && x1 >= 0. {
-                *impact = origin + vector * x1;
+                origin + vector * x1
             } else {
-                *impact = origin + vector * x2;
-            }
+                origin + vector * x2
+            };
+            
+            *impact = self.local_to_global_point(imp);
+            true
+        } else {
+            false
         }
-
-        *impact = self.local_to_global_point(impact);
-
-        d >= 0.
     }
 
     fn normal(&self, at: &Vector<f32>, observer: &Vector<f32>) -> Ray {
-        let local = self.global_to_local_point(at);
-        let ray = if self.global_to_local_point(observer).norm(Euclidean) > 1.0 {
+        let local = self.global_to_local_point(at.clone());
+        let ray = if self.global_to_local_point(observer.clone()).norm(Euclidean) > 1.0 {
             Ray::new(
                 local[0], local[1], local[2],
                 local[0], local[1], local[2]
@@ -87,11 +88,11 @@ impl Object for Sphere {
             )
         };
 
-        self.local_to_global_ray(&ray).normalized()
+        self.local_to_global_ray(ray).normalized()
     }
 
     fn material_at(&self, impact: &Vector<f32>) -> &Material {
-        let impact = self.global_to_local_point(impact);
+        let impact = self.global_to_local_point(impact.clone());
 
         let x = impact[1].atan2(impact[0]) / TAU + 0.5;
         let y = impact[2] / PI;

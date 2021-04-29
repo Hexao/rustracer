@@ -55,7 +55,7 @@ impl Scene {
         let mut dist = f32::INFINITY;
 
         for obj in self.objects.iter() {
-            let mut new_impact = Vector::zeros(3);
+            let mut new_impact = Vector::zeros(4);
 
             if obj.intersect(&ray, &mut new_impact) {
                 let new_dist = (&new_impact - ray.origin()).norm(Euclidean);

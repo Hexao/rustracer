@@ -19,17 +19,24 @@ pub struct Camera {
     inv: Matrix<f32>,
 
     focal: Focal,
+    flags: u8,
     x: usize,
     y: usize,
 }
 
 impl Camera {
+    pub const ANTI_ALIASING: u8 = 1;
+
     pub fn new(x: usize, y: usize, focal: Focal) -> Self {
         Camera {
             tra: Matrix::identity(4),
             inv: Matrix::identity(4),
-            x, y, focal,
+            flags: 0, x, y, focal,
         }
+    }
+
+    pub fn set_flags(&mut self, flags: u8) {
+        self.flags = flags;
     }
 
     /**
@@ -56,21 +63,45 @@ impl Camera {
 
                 let scene = scene.clone();
                 let arc_self = arc_self.clone();
-                let mut buf = Vec::with_capacity(step * arc_self.x);
 
                 threads.push(scope.spawn(move |_| {
+                    let offsets = [(-0.25, -0.25), (0.25, -0.25), (-0.25, 0.25), (0.25, 0.25)];
+                    let mut buf = Vec::with_capacity(step * arc_self.x);
+
                     for y in start_row..stop_row {
                         if y >= arc_self.y {
                             break;
                         }
 
                         for x in 0..arc_self.x {
-                            let ray = arc_self.local_to_global_ray(&arc_self.get_ray(x, y));
-                            let mut impact = Vector::zeros(3);
+                            buf.push(if arc_self.flags & Camera::ANTI_ALIASING != 0 {
+                                let mut sr = 0;
+                                let mut sg = 0;
+                                let mut sb = 0;
 
-                            buf.push(match scene.closer(&ray, &mut impact) {
-                                Some(object) => self.impact_color(&ray, object, &impact, &scene, 0),
-                                None => scene.background(),
+                                for (ox, oy) in &offsets {
+                                    let ray = arc_self.local_to_global_ray(arc_self.get_ray(x as f32 + ox, y as f32 + oy));
+                                    let mut impact = Vector::zeros(4);
+
+                                    let Color { red, green, blue } = match scene.closer(&ray, &mut impact) {
+                                        Some(object) => self.impact_color(&ray, object, &impact, &scene, 0),
+                                        None => scene.background(),
+                                    };
+
+                                    sr += red as u16;
+                                    sg += green as u16;
+                                    sb += blue as u16;
+                                }
+
+                                Color::new((sr / 4) as u8, (sg / 4) as u8, (sb / 4) as u8)
+                            } else {
+                                let ray = arc_self.local_to_global_ray(arc_self.get_ray(x as f32, y as f32));
+                                let mut impact = Vector::zeros(4);
+
+                                match scene.closer(&ray, &mut impact) {
+                                    Some(object) => self.impact_color(&ray, object, &impact, &scene, 0),
+                                    None => scene.background(),
+                                }
                             });
                         }
                     }
@@ -100,19 +131,19 @@ impl Camera {
         self.render_in(scene, "image", thread_count);
     }
 
-    fn get_ray(&self, x: usize, y: usize) -> Ray {
+    fn get_ray(&self, x: f32, y: f32) -> Ray {
         match self.focal {
             Focal::Perspective(focal) => {
                 let size = self.x.min(self.y);
-                let px =  (x as f32 - self.x as f32 / 2.0) / size as f32;
-                let py = -(y as f32 - self.y as f32 / 2.0) / size as f32;
+                let px =  (x - self.x as f32 / 2.0) / size as f32;
+                let py = -(y - self.y as f32 / 2.0) / size as f32;
 
                 Ray::new(px, py, 0.0, px, py, focal).normalized()
             }
             Focal::Orthographic(focal) => {
                 let size = self.x.min(self.y) / focal as usize;
-                let px =  (x as f32 - self.x as f32 / 2.0) / size as f32;
-                let py = -(y as f32 - self.y as f32 / 2.0) / size as f32;
+                let px =  (x - self.x as f32 / 2.0) / size as f32;
+                let py = -(y - self.y as f32 / 2.0) / size as f32;
 
                 Ray::new(px, py, 0.0, 0.0, 0.0, 1.0)
             }
