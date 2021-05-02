@@ -12,11 +12,7 @@ impl SimpleMat {
 }
 
 impl MatProvider for SimpleMat {
-    fn material(&self, _x: f32, _y: f32) -> &Material {
-        &self.material
-    }
-
-    fn has_secondary_color(&self) -> bool {
-        false
+    fn material(&self, _x: f32, _y: f32) -> Material {
+        self.material
     }
 }

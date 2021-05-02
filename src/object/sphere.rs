@@ -17,7 +17,7 @@ pub struct Sphere {
 
 impl Sphere {
     pub fn new(mat: Box<dyn MatProvider>) -> Self {
-        Sphere {
+        Self {
             tra: Matrix::identity(4),
             inv: Matrix::identity(4),
             mat,
@@ -66,7 +66,7 @@ impl Object for Sphere {
             } else {
                 origin + vector * x2
             };
-            
+
             *impact = self.local_to_global_point(imp);
             true
         } else {
@@ -91,11 +91,11 @@ impl Object for Sphere {
         self.local_to_global_ray(ray).normalized()
     }
 
-    fn material_at(&self, impact: &Vector<f32>) -> &Material {
+    fn material_at(&self, impact: &Vector<f32>) -> Material {
         let impact = self.global_to_local_point(impact.clone());
 
-        let x = impact[1].atan2(impact[0]) / TAU + 0.5;
-        let y = impact[2] / PI;
+        let x = impact[2].atan2(impact[0]) / TAU + 0.5;
+        let y = impact[1].acos() / PI;
 
         self.mat.material(x, y)
     }

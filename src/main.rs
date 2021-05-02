@@ -7,11 +7,13 @@ use object::{
     light::{Light, point_light::PointLight},
     camera::{Camera, Focal},
     sphere::Sphere,
+    plane::Plane,
     Object,
 };
 
 use material::{
     simple_mat::SimpleMat,
+    texture::Texture,
     MatProvider,
     Material,
     Color,
@@ -26,6 +28,8 @@ fn main() {
     let mut s = Scene::new();
 
     c.set_flags(0);
+
+    let texture = Texture::new("pito.png", 70.0);
 
     let white_mat = Material::new(
         Color::GRAY,
@@ -64,9 +68,12 @@ fn main() {
     sphere.move_global(0.0, 0.0, 15.0);
     s.add_object(sphere);
 
-    let color: Box<dyn MatProvider> = Box::new(SimpleMat::new(red_mat));
-    let mut sphere: Box<dyn Object> = Box::new(Sphere::new(color));
+    // let color: Box<dyn MatProvider> = Box::new(SimpleMat::new(red_mat));
+    let color: Box<dyn MatProvider> = Box::new(texture);
+    let mut sphere: Box<dyn Object> = Box::new(Plane::new(color));
     sphere.move_global(2.5, 0.0, 15.0);
+    sphere.scale(2.25);
+    // sphere.rotate_y(120.0);
     s.add_object(sphere);
 
     let color: Box<dyn MatProvider> = Box::new(SimpleMat::new(green_mat));

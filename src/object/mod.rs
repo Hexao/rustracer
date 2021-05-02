@@ -1,5 +1,6 @@
 pub mod sphere;
 pub mod camera;
+pub mod plane;
 pub mod light;
 
 use crate::material::Material;
@@ -74,8 +75,8 @@ pub trait Movable {
             0., angle.sin(), angle.cos(), 0.,
             0., 0., 0., 1.
         ]);
-        
-        *self.tra_mut() = mat * self.tra();
+
+        *self.tra_mut() = self.tra() * mat;
         *self.inv_mut() = self.tra().clone().inverse().unwrap();
     }
 
@@ -88,8 +89,8 @@ pub trait Movable {
             -angle.sin(), 0., angle.cos(), 0.,
             0., 0., 0., 1.
         ]);
-        
-        *self.tra_mut() = mat * self.tra();
+
+        *self.tra_mut() = self.tra() * mat;
         *self.inv_mut() = self.tra().clone().inverse().unwrap();
     }
 
@@ -102,20 +103,20 @@ pub trait Movable {
             0., 0., 1., 0.,
             0., 0., 0., 1.
         ]);
-        
-        *self.tra_mut() = mat * self.tra();
+
+        *self.tra_mut() = self.tra() * mat;
         *self.inv_mut() = self.tra().clone().inverse().unwrap();
     }
 
-    fn scale(&mut self, scale: f32) {        
+    fn scale(&mut self, scale: f32) {
         let mat = Matrix::new(4, 4, vec![
             scale, 0., 0., 0.,
             0., scale, 0., 0.,
             0., 0., scale, 0.,
             0., 0., 0., 1.
         ]);
-        
-        *self.tra_mut() = mat * self.tra();
+
+        *self.tra_mut() = self.tra() * mat;
         *self.inv_mut() = self.tra().clone().inverse().unwrap();
     }
 }
@@ -123,5 +124,5 @@ pub trait Movable {
 pub trait Object: Movable {
     fn intersect(&self, ray: &Ray, impact: &mut Vector<f32>) -> bool;
     fn normal(&self, at: &Vector<f32>, observer: &Vector<f32>) -> Ray;
-    fn material_at(&self, impact: &Vector<f32>) -> &Material;
+    fn material_at(&self, impact: &Vector<f32>) -> Material;
 }

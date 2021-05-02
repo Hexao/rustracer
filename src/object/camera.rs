@@ -113,7 +113,7 @@ impl Camera {
             for thread in threads {
                 let partial_data = thread.join().unwrap();
                 for pix in partial_data {
-                    buf.append(&mut pix.to_vec());
+                    buf.extend_from_slice(&mut pix.to_vec());
                 }
             }
         }).unwrap();
@@ -141,9 +141,9 @@ impl Camera {
                 Ray::new(px, py, 0.0, px, py, focal).normalized()
             }
             Focal::Orthographic(focal) => {
-                let size = self.x.min(self.y) / focal as usize;
-                let px =  (x - self.x as f32 / 2.0) / size as f32;
-                let py = -(y - self.y as f32 / 2.0) / size as f32;
+                let size = self.x.min(self.y) as f32 / focal;
+                let px =  (x - self.x as f32 / 2.0) / size;
+                let py = -(y - self.y as f32 / 2.0) / size;
 
                 Ray::new(px, py, 0.0, 0.0, 0.0, 1.0)
             }

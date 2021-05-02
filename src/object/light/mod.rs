@@ -23,7 +23,7 @@ pub trait Light: Movable {
     fn ray_from_light(&self, point: &Vector<f32>) -> Ray {
         let local = self.global_to_local_point(point.clone());
         let ray = Ray::new(
-            0.0, 0.0, 0.0, 
+            0.0, 0.0, 0.0,
             local[0], local[1], local[2]
         );
 
