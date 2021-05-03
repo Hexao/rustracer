@@ -1,0 +1,103 @@
+{
+    "objects": [
+        {
+            "type": "SPHERE",
+            "material": {
+                "type": "SIMPLE",
+                "mat": {
+                    "ambient": [85, 0, 0],
+                    "diffuse": [170, 0, 0],
+                    "specular": [255, 120, 120],
+                    "alpha": 255,
+                    "shininess": 50
+                }
+            },
+            "transform": [-7.5, 0, 15]
+        },{
+            "type": "SPHERE",
+            "material": {
+                "type": "SIMPLE",
+                "mat": {
+                    "ambient": [0, 85, 0],
+                    "diffuse": [0, 170, 0],
+                    "specular": [120, 255, 120],
+                    "alpha": 255,
+                    "shininess": 50
+                }
+            },
+            "transform": [-5, 0, 15]
+        },{
+            "type": "SPHERE",
+            "material": {
+                "type": "SIMPLE",
+                "mat": {
+                    "ambient": [0, 0, 85],
+                    "diffuse": [0, 0, 170],
+                    "specular": [120, 120, 255],
+                    "alpha": 255,
+                    "shininess": 50
+                }
+            },
+            "transform": [-2.5, 0, 15]
+        },{
+            "type": "SPHERE",
+            "material": {
+                "type": "SIMPLE",
+                "mat": {
+                    "ambient": 127,
+                    "diffuse": 191,
+                    "specular": 255,
+                    "alpha": 255,
+                    "shininess": 75
+                }
+            },
+            "transform": [0, 0, 15]
+        },{
+            "type": "PLANE",
+            "material": {
+                "type": "TEXTURE",
+                "resource": "pito.png",
+                "shininess": 70
+            },
+            "transform": [2.5, 0, 15],
+            "scale": 2.25
+        },{
+            "type": "SPHERE",
+            "material": {
+                "type": "SIMPLE",
+                "mat": {
+                    "ambient": [0, 85, 0],
+                    "diffuse": [0, 191, 0],
+                    "specular": [120, 255, 120],
+                    "alpha": 255,
+                    "shininess": 50
+                }
+            },
+            "transform": [5, 0, 15]
+        },{
+            "type": "SPHERE",
+            "material": {
+                "type": "SIMPLE",
+                "mat": {
+                    "ambient": [0, 0, 85],
+                    "diffuse": [0, 0, 191],
+                    "specular": [120, 120, 255],
+                    "alpha": 255,
+                    "shininess": 50
+                }
+            },
+            "transform": [7.5, 0, 15]
+        }
+    ],
+    "lights": [
+        {
+            "type": "POINT",
+            "color": {
+                "diffuse": 191,
+                "specular": 255
+            },
+            "transform": [2.5, 7.5, 0]
+        }
+    ],
+    "output": "render/simple_scene.png"
+}

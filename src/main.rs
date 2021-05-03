@@ -21,93 +21,189 @@ use material::{
 
 use scene::Scene;
 
+use serde_json::{Map, Value};
+
 fn main() {
-    let mut c = Camera::new(1920, 1080, Focal::Perspective(1.7));
-    // let c = Camera::new(7680, 4320, Focal::Perspective(1.7));
-    // let c = Camera::new(720, 480, Focal::Perspective(1.7));
-    let mut s = Scene::new();
+    let scn = match std::env::args().nth(1) {
+        Some(scn) => scn,
+        None => {
+            println!("expected scene, found nothing!");
+            return;
+        }
+    };
 
-    c.set_flags(0);
+    let file = match std::fs::File::open(scn) {
+        Ok(file) => file,
+        Err(e) => {
+            println!("{}", e);
+            return;
+        }
+    };
 
-    let texture = Texture::new("pito.png", 70.0);
+    let reader = std::io::BufReader::new(file);
+    let json: Map<String, Value> = match serde_json::from_reader(reader) {
+        Ok(map) => map,
+        Err(e) => {
+            println!("{}", e);
+            return;
+        }
+    };
 
-    let white_mat = Material::new(
-        Color::GRAY,
-        Color::WHITE,
-        Color::FULL_WHITE,
-        255,
-        75.0
-    );
+    let mut scene = Scene::new();
+    let mut camera = Camera::new(1920, 1080, Focal::Perspective(1.7));
 
-    let red_mat = Material::new(
-        Color::DARK_RED,
-        Color::RED,
-        Color::new(255, 120, 120),
-        255,
-        50.0
-    );
+    if let Some(objects) = json.get("objects") {
+        let objects = match objects.as_array() {
+            Some(objects) => objects,
+            None => {
+                println!("The key \"objects\" should be an array!");
+                return;
+            }
+        };
 
-    let green_mat = Material::new(
-        Color::DARK_GREEN,
-        Color::GREEN,
-        Color::new(120, 255, 120),
-        255,
-        50.0
-    );
+        for (id, object) in objects.iter().enumerate() {
+            let object = object.as_object().unwrap_or_else(|| {
+                panic!("Object no {} in \"objects\" should be objects structure!", id);
+            });
 
-    let blue_mat = Material::new(
-        Color::DARK_BLUE,
-        Color::BLUE,
-        Color::new(120, 120, 255),
-        255,
-        50.0
-    );
+            let obj_type = object.get("type").unwrap_or_else(|| {
+                panic!("Object no {} should have a \"type\"", id);
+            }).as_str().unwrap_or_else(|| {
+                panic!("Object no {}, the type must be a string!", id);
+            });
 
-    let color: Box<dyn MatProvider> = Box::new(SimpleMat::new(white_mat));
-    let mut sphere: Box<dyn Object> = Box::new(Sphere::new(color));
-    sphere.move_global(0.0, 0.0, 15.0);
-    s.add_object(sphere);
+            let material = object.get("material").unwrap_or_else(|| {
+                panic!("Object no {} should have a \"material\"", id);
+            }).as_object().unwrap_or_else(|| {
+                panic!("Object no {}, the material must be an object!", id);
+            });
 
-    // let color: Box<dyn MatProvider> = Box::new(SimpleMat::new(red_mat));
-    let color: Box<dyn MatProvider> = Box::new(texture);
-    let mut sphere: Box<dyn Object> = Box::new(Plane::new(color));
-    sphere.move_global(2.5, 0.0, 15.0);
-    sphere.scale(2.25);
-    // sphere.rotate_y(120.0);
-    s.add_object(sphere);
+            let mat_type = material.get("type").unwrap_or_else(|| {
+                panic!("Material of object no {} should have a \"type\"", id);
+            }).as_str().unwrap_or_else(|| {
+                panic!("Object no {}, the material type must be an object!", id);
+            });
 
-    let color: Box<dyn MatProvider> = Box::new(SimpleMat::new(green_mat));
-    let mut sphere: Box<dyn Object> = Box::new(Sphere::new(color));
-    sphere.move_global(5.0, 0.0, 15.0);
-    s.add_object(sphere);
+            let mat_object: Box<dyn MatProvider> = match mat_type {
+                "SIMPLE" => {
+                    let material = material.get("mat").unwrap_or_else(|| {
+                        panic!("Object no {}, simple_mat should have a \"mat\"", id);
+                    }).as_object().unwrap_or_else(|| {
+                        panic!("Object no {}, mat must be an object", id);
+                    });
 
-    let color: Box<dyn MatProvider> = Box::new(SimpleMat::new(blue_mat));
-    let mut sphere: Box<dyn Object> = Box::new(Sphere::new(color));
-    sphere.move_global(7.5, 0.0, 15.0);
-    s.add_object(sphere);
+                    let ambient = get_color(material, "ambient").unwrap_or_else(|e| {
+                        panic!("Object no {}, {}", id, e);
+                    });
+                    let diffuse = get_color(material, "ambient").unwrap_or_else(|e| {
+                        panic!("Object no {}, {}", id, e);
+                    });
+                    let specular = get_color(material, "ambient").unwrap_or_else(|e| {
+                        panic!("Object no {}, {}", id, e);
+                    });
+                    let alpha = material.get("alpha").unwrap_or_else(|| {
+                        panic!("Object no {}, should have a \"alpha\"", id);
+                    }).as_u64().unwrap_or_else(|| {
+                        panic!("Object on {}, alpha must be an integer", id);
+                    }) as u8;
+                    let shininess = material.get("shininess").unwrap_or_else(|| {
+                        panic!("Object no {}, should have a \"shininess\"", id);
+                    }).as_f64().unwrap_or_else(|| {
+                        panic!("Object on {}, alpha must be an integer", id);
+                    }) as f32;
 
-    let color: Box<dyn MatProvider> = Box::new(SimpleMat::new(blue_mat));
-    let mut sphere: Box<dyn Object> = Box::new(Sphere::new(color));
-    sphere.move_global(-2.5, 0.0, 15.0);
-    s.add_object(sphere);
+                    Box::new(SimpleMat::new(Material::new(ambient, diffuse, specular, alpha, shininess)))
+                }
+                "TEXTURE" => {
+                    let file_name = material.get("resource").unwrap_or_else(|| {
+                        panic!("Object no {}, texture should have a \"resource\"", id);
+                    }).as_str().unwrap_or_else(|| {
+                        panic!("Object no {}, resource must be a string", id);
+                    });
+                    let shininess = material.get("shininess").unwrap_or_else(|| {
+                        panic!("Object no {}, should have a \"shininess\"", id);
+                    }).as_f64().unwrap_or_else(|| {
+                        panic!("Object on {}, alpha must be an integer", id);
+                    }) as f32;
 
-    let color: Box<dyn MatProvider> = Box::new(SimpleMat::new(green_mat));
-    let mut sphere: Box<dyn Object> = Box::new(Sphere::new(color));
-    sphere.move_global(-5.0, 0.0, 15.0);
-    s.add_object(sphere);
+                    Box::new(Texture::new(file_name, shininess))
+                }
+                unknown => panic!("Object no {}, fonud an unknown material type: {}", id, unknown),
+            };
 
-    let color: Box<dyn MatProvider> = Box::new(SimpleMat::new(red_mat));
-    let mut sphere: Box<dyn Object> = Box::new(Sphere::new(color));
-    sphere.move_global(-7.5, 0.0, 15.0);
-    s.add_object(sphere);
+            let mut scn_object: Box<dyn Object> = match obj_type {
+                "SPHERE" => Box::new(Sphere::new(mat_object)),
+                "PLANE" => Box::new(Plane::new(mat_object)),
+                unknown => panic!("Object no {} has an unknown type: \"{}\"", id, unknown),
+            };
 
-    let mut light: Box<dyn Light> = Box::new(PointLight::new(Color::WHITE, Color::FULL_WHITE));
-    light.move_global(2.5, 7.5, 0.0);
-    s.add_light(light);
+            if let Some(transform) = object.get("transform") {
+                let transform = transform.as_array().unwrap_or_else(|| {
+                    panic!("Object no {}, transform must be an array of size 3", id);
+                });
 
-    let start = std::time::Instant::now();
-    c.render(&s, 6);
+                if transform.len() == 3 {
+                    let x = transform[0].as_f64().unwrap_or_else(|| {
+                        panic!("Object no {}, transform contains a none floting point value", id)
+                    }) as f32;
+                    let y = transform[1].as_f64().unwrap_or_else(|| {
+                        panic!("Object no {}, transform contains a none floting point value", id)
+                    }) as f32;
+                    let z = transform[2].as_f64().unwrap_or_else(|| {
+                        panic!("Object no {}, transform contains a none floting point value", id)
+                    }) as f32;
 
-    let dur = start.elapsed().as_secs_f64();
-    println!("rendered in {:.2} sec", dur);
+                    scn_object.move_global(x, y, z);
+                } else {
+                    panic!("Object no {}, transform must be an array of size 3", id);
+                }
+            }
+
+            if let Some(scale) = object.get("scale") {
+                let scale = scale.as_f64().unwrap_or_else(|| {
+                    panic!("Object no {}, scale must be a floting point value", id);
+                }) as f32;
+
+                scn_object.scale(scale);
+            }
+
+            scene.add_object(scn_object);
+        }
+    }
+
+    camera.render(&scene, 6);
+}
+
+fn get_color(map: &Map<String, Value>, key: &str) -> Result<Color, String> {
+    let value = match map.get(key) {
+        Some(value) => value,
+        None => return Err(format!("should have a \"{}\"", key)),
+    };
+    
+    match value.as_u64() {
+        Some(gray) => Ok(Color::new_gray(gray as u8)),
+        None => match value.as_array() {
+            Some(array) => {
+                if array.len() == 3 {
+                    let red = match array[0].as_u64() {
+                        Some(red) => red as u8,
+                        None => return Err(format!("{} contain an none integer value!", key))
+                    };
+                    let green = match array[1].as_u64() {
+                        Some(red) => red as u8,
+                        None => return Err(format!("{} contain an none integer value!", key))
+                    };
+                    let blue = match array[2].as_u64() {
+                        Some(red) => red as u8,
+                        None => return Err(format!("{} contain an none integer value!", key))
+                    };
+
+                    Ok(Color::new(red, green, blue))
+                } else {
+                    Err(format!("array for {} must be of size 3!", key))
+                }
+            }
+            None => Err(format!("{} must be an integer or array of size 3!", key))
+        }
+    }
 }
