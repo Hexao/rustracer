@@ -8,7 +8,6 @@ use rulinalg::vector::Vector;
 use std::sync::Arc;
 use crossbeam;
 
-
 pub enum Focal {
     Perspective(f32),
     Orthographic(f32),
@@ -119,8 +118,8 @@ impl Camera {
         }).unwrap();
 
         println!("scene rendered !");
-        let name = format!("{}.png", file_name);
-        image::save_buffer(name, buf.as_slice(), self.x as u32, self.y as u32, image::ColorType::RGB(8)).unwrap();
+        std::fs::create_dir_all(std::path::Path::new(file_name).parent().unwrap()).unwrap();
+        image::save_buffer(file_name, buf.as_slice(), self.x as u32, self.y as u32, image::ColorType::RGB(8)).unwrap();
     }
 
     /// Allow to render the Scene **scene** in a file named image.png
@@ -128,7 +127,7 @@ impl Camera {
     /// ### Params
     /// **scene** The scene to render
     pub fn render(&self, scene: &Scene, thread_count: usize) {
-        self.render_in(scene, "image", thread_count);
+        self.render_in(scene, "image.png", thread_count);
     }
 
     fn get_ray(&self, x: f32, y: f32) -> Ray {
