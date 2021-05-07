@@ -50,6 +50,8 @@ impl Camera {
         let mut buf = Vec::with_capacity(self.x * self.y);
         let arc_self = Arc::from(self);
         let scene = Arc::from(scene);
+    
+        let start = std::time::Instant::now();
         println!("render scene...");
 
         crossbeam::scope(|scope| {
@@ -117,7 +119,9 @@ impl Camera {
             }
         }).unwrap();
 
-        println!("scene rendered !");
+        let dur = start.elapsed().as_secs_f64();
+        println!("scene rendered in {:.2} sec!", dur);
+
         std::fs::create_dir_all(std::path::Path::new(file_name).parent().unwrap()).unwrap();
         image::save_buffer(file_name, buf.as_slice(), self.x as u32, self.y as u32, image::ColorType::RGB(8)).unwrap();
     }

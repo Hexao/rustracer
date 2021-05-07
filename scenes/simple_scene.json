@@ -51,11 +51,12 @@
             "type": "PLANE",
             "material": {
                 "type": "TEXTURE",
-                "resource": "render/image_720.png",
+                "resource": "texture/pito.png",
                 "shininess": 70
             },
-            "transform": [2.5, 0, 15],
-            "scale": 2.25
+            "transform": [0, -1, 15],
+            "rotate": [90, 0, 0],
+            "scale": 2.5
         },{
             "type": "SPHERE",
             "material": {
@@ -78,6 +79,15 @@
                 }
             },
             "transform": [7.5, 0, 15]
+        },{
+            "type": "SPHERE",
+            "material": {
+                "type": "TEXTURE",
+                "rep": [6, 3],
+                "resource": "texture/pito.png"
+            },
+            "transform": [2.5, 0, 15],
+            "rotate": [0, 0, 0]
         }
     ],
     "lights": [
@@ -98,10 +108,12 @@
         },
         "flags": [
             "ANTI_ALIASING"
-        ]
+        ],
+        "transform": [0, 3, 0],
+        "rotate": [7, 0, 0]
     },
     "config": {
         "output": "render/simple_scene.png",
-        "threads": 18
+        "threads": 8
     }
 }

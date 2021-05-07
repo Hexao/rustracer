@@ -8,6 +8,7 @@ use object::{
     camera::{Camera, Focal},
     sphere::Sphere,
     plane::Plane,
+    Movable,
     Object,
 };
 
@@ -94,8 +95,8 @@ impl Display for Malformed {
             Malformed::NotAnObject(category) => write!(f, "\"{}\" should be an object", category)?,
             Malformed::Object(id, err) => write!(f, "Object {}{}", id, err)?,
             Malformed::Light(id, err) => write!(f, "Light {}{}", id, err)?,
-            Malformed::Camera(err) => write!(f, "Camera {}", err)?,
-            Malformed::Config(err) => write!(f, "Config {}", err)?,
+            Malformed::Camera(err) => write!(f, "Camera{}", err)?,
+            Malformed::Config(err) => write!(f, "Config{}", err)?,
         }
 
         Ok(())
@@ -122,7 +123,8 @@ impl Display for InnerError {
         match self {
             InnerError::NotAnObject => write!(f, " should be an Object")?,
             InnerError::MissingField(field) => write!(f, " should have a \"{}\"", field)?,
-            InnerError::FieldArray(field, array_type, size) => write!(f, ", \"{}\" must be a {}Array of size {}", field, array_type, size)?,
+            InnerError::FieldArray(field, array_type, size) if *size > 0 => write!(f, ", \"{}\" must be a {}Array of size {}", field, array_type, size)?,
+            InnerError::FieldArray(field, array_type, _) => write!(f, ", \"{}\" must be a {}Array", field, array_type)?,
             InnerError::FieldFloat(field) => write!(f, ", \"{}\" must be a Float", field)?,
             InnerError::FieldInteger(field) => write!(f, ", \"{}\" must be an Integer", field)?,
             InnerError::FieldString(field) => write!(f, ", \"{}\" must be a String", field)?,
@@ -231,7 +233,43 @@ fn parse_objects(scene: &mut Scene, json: &Map<String, Value>) -> Result<(), Mal
                         None => 50.0,
                     };
 
-                    Box::new(Texture::new(file_name, shininess))
+                    let (rep_x, rep_y) = match material.get("rep") {
+                        None => (
+                            match material.get("repX") {
+                                None => 1,
+                                Some(rep) => match rep.as_u64() {
+                                    None => return Err(Malformed::Object(id, InnerError::FieldInteger("material/repX"))),
+                                    Some(rep) => rep as usize,
+                                }
+                            },
+                            match material.get("repY") {
+                                None => 1,
+                                Some(rep) => match rep.as_u64() {
+                                    None => return Err(Malformed::Object(id, InnerError::FieldInteger("material/repX"))),
+                                    Some(rep) => rep as usize,
+                                }
+                            }
+                        ),
+                        Some(rep) => match rep.as_array() {
+                            None => return Err(Malformed::Object(id, InnerError::FieldArray("material/rep", "Int", 2))),
+                            Some(rep) => if rep.len() == 2 {
+                                let x = match rep[0].as_u64() {
+                                    None => return Err(Malformed::Object(id, InnerError::FieldArray("material/rep", "Int", 2))),
+                                    Some(x) => x as usize,
+                                };
+                                let y = match rep[1].as_u64() {
+                                    None => return Err(Malformed::Object(id, InnerError::FieldArray("material/rep", "Int", 2))),
+                                    Some(x) => x as usize,
+                                };
+
+                                (x, y)
+                            } else {
+                                return Err(Malformed::Object(id, InnerError::FieldArray("material/rep", "Int", 2)))
+                            }
+                        }
+                    };
+
+                    Box::new(Texture::new(file_name, rep_x, rep_y, shininess))
                 }
                 unknown => return Err(Malformed::Object(id, InnerError::UnknownMaterial(unknown.to_owned()))),
             };
@@ -265,6 +303,34 @@ fn parse_objects(scene: &mut Scene, json: &Map<String, Value>) -> Result<(), Mal
                     scn_object.move_global(x, y, z);
                 } else {
                     return Err(Malformed::Object(id, InnerError::FieldArray("transform", "Float", 3)));
+                }
+            }
+
+            if let Some(rotate) = object.get("rotate") {
+                let rotate = match rotate.as_array() {
+                    None => return Err(Malformed::Object(id, InnerError::FieldArray("rotate", "Float", 3))),
+                    Some(rotate) => rotate,
+                };
+
+                if rotate.len() == 3 {
+                    let x = match rotate[0].as_f64() {
+                        None => return Err(Malformed::Object(id, InnerError::FieldArray("rotate", "Float", 3))),
+                        Some(x) => x as f32,
+                    };
+                    let y = match rotate[1].as_f64() {
+                        None => return Err(Malformed::Object(id, InnerError::FieldArray("rotate", "Float", 3))),
+                        Some(y) => y as f32,
+                    };
+                    let z = match rotate[2].as_f64() {
+                        None => return Err(Malformed::Object(id, InnerError::FieldArray("rotate", "Float", 3))),
+                        Some(z) => z as f32,
+                    };
+
+                    scn_object.rotate_x(x);
+                    scn_object.rotate_y(y);
+                    scn_object.rotate_z(z);
+                } else {
+                    return Err(Malformed::Object(id, InnerError::FieldArray("rotate", "Float", 3)));
                 }
             }
 
@@ -443,10 +509,64 @@ fn parse_camera(json: &Map<String, Value>) -> Result<Camera, Malformed> {
             }
         };
 
-        let mut camera = Camera::new(x, y, focal);
-        camera.set_flags(flags);
+        let mut scn_camera = Camera::new(x, y, focal);
+        scn_camera.set_flags(flags);
 
-        Ok(camera)
+        if let Some(transform) = camera.get("transform") {
+            let transform = match transform.as_array() {
+                None => return Err(Malformed::Camera(InnerError::FieldArray("transform", "Float", 3))),
+                Some(transform) => transform,
+            };
+
+            if transform.len() == 3 {
+                let x = match transform[0].as_f64() {
+                    None => return Err(Malformed::Camera(InnerError::FieldArray("transform", "Float", 3))),
+                    Some(x) => x as f32,
+                };
+                let y = match transform[1].as_f64() {
+                    None => return Err(Malformed::Camera(InnerError::FieldArray("transform", "Float", 3))),
+                    Some(y) => y as f32,
+                };
+                let z = match transform[2].as_f64() {
+                    None => return Err(Malformed::Camera(InnerError::FieldArray("transform", "Float", 3))),
+                    Some(z) => z as f32,
+                };
+
+                scn_camera.move_global(x, y, z);
+            } else {
+                return Err(Malformed::Camera(InnerError::FieldArray("transform", "Float", 3)));
+            }
+        }
+
+        if let Some(rotate) = camera.get("rotate") {
+            let rotate = match rotate.as_array() {
+                None => return Err(Malformed::Camera(InnerError::FieldArray("rotate", "Float", 3))),
+                Some(rotate) => rotate,
+            };
+
+            if rotate.len() == 3 {
+                let x = match rotate[0].as_f64() {
+                    None => return Err(Malformed::Camera(InnerError::FieldArray("rotate", "Float", 3))),
+                    Some(x) => x as f32,
+                };
+                let y = match rotate[1].as_f64() {
+                    None => return Err(Malformed::Camera(InnerError::FieldArray("rotate", "Float", 3))),
+                    Some(y) => y as f32,
+                };
+                let z = match rotate[2].as_f64() {
+                    None => return Err(Malformed::Camera(InnerError::FieldArray("rotate", "Float", 3))),
+                    Some(z) => z as f32,
+                };
+
+                scn_camera.rotate_x(x);
+                scn_camera.rotate_y(y);
+                scn_camera.rotate_z(z);
+            } else {
+                return Err(Malformed::Camera(InnerError::FieldArray("rotate", "Float", 3)));
+            }
+        }
+
+        Ok(scn_camera)
     } else {
         Ok(Camera::new(1920, 1080, Focal::Perspective(1.7)))
     }
