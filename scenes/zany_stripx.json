@@ -1,0 +1,36 @@
+{
+    "scene": {
+        "ambient": 191
+    },
+    "camera": {
+        "size": [740, 740],
+        "flags": [
+        ]
+    },
+    "objects": [
+        {
+            "type": "SPHERE",
+            "material": {
+                "type": "STRIP_X",
+                "rep": 4000,
+                "mat": [
+                    {
+                        "ambient": [191, 0, 0],
+                        "diffuse": [191, 0, 0],
+                        "specular": [255, 120, 120]
+                    },{
+                        "ambient": [0, 0, 191],
+                        "diffuse": [0, 0, 191],
+                        "specular": [120, 120, 255]
+                    }
+                ]
+            },
+            "transform": [0, 0, 2],
+            "rotate": [0, 25, -33]
+        }
+    ],
+    "config": {
+        "output": "render/zany_stripx.png",
+        "threads": 8
+    }
+}

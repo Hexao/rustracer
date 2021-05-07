@@ -13,7 +13,7 @@ pub struct Scene {
     lights: Vec<Box<dyn Light>>,
 
     background: Color,
-    ambiant: Color,
+    ambient: Color,
 }
 
 impl Scene {
@@ -22,15 +22,15 @@ impl Scene {
             objects: Vec::default(),
             lights: Vec::default(),
             background: Color::SKY,
-            ambiant: Color::GRAY,
+            ambient: Color::new_gray(127),
         }
     }
 
-    pub fn new_custom(background: Color, ambiant: Color) -> Self {
+    pub fn new_custom(background: Color, ambient: Color) -> Self {
         Scene {
             objects: Vec::default(),
             lights: Vec::default(),
-            background, ambiant
+            background, ambient
         }
     }
 
@@ -38,8 +38,8 @@ impl Scene {
         self.background
     }
 
-    pub fn ambiant(&self) -> Color {
-        self.ambiant
+    pub fn ambient(&self) -> Color {
+        self.ambient
     }
 
     pub fn add_object(&mut self, object: Box<dyn Object>) {

@@ -125,4 +125,17 @@ pub trait Object: Movable {
     fn intersect(&self, ray: &Ray, impact: &mut Vector<f32>) -> bool;
     fn normal(&self, at: &Vector<f32>, observer: &Vector<f32>) -> Ray;
     fn material_at(&self, impact: &Vector<f32>) -> Material;
+
+    fn reflected_ray(&self, ray: &Ray, impact: &Vector<f32>) -> Ray {
+        let normal = self.normal(impact, ray.origin());
+
+        let gap = 0.001;
+        let dot = ray.vector().dot(normal.vector());
+        let reflected = ray.vector() - normal.vector() * 2.0 * dot;
+
+        Ray::new(
+            impact[0] + reflected[0] * gap, impact[1] + reflected[1] * gap, impact[2] + reflected[2] * gap,
+            reflected[0], reflected[1], reflected[2]
+        )
+    }
 }

@@ -17,22 +17,6 @@ pub struct Color {
 }
 
 impl Color {
-    pub const FULL_RED: Color = Color { red: 255, green: 0, blue: 0 };
-    pub const FULL_GREEN: Color = Color { red: 0, green: 255, blue: 0};
-    pub const FULL_BLUE: Color = Color { red: 0, green: 0, blue: 255};
-    pub const RED: Color = Color { red: 170, green: 0, blue: 0};
-    pub const GREEN: Color = Color { red: 0, green: 170, blue: 0};
-    pub const BLUE: Color = Color { red: 0, green: 0, blue: 170};
-    pub const DARK_RED: Color = Color { red: 85, green: 0, blue: 0};
-    pub const DARK_GREEN: Color = Color { red: 0, green: 85, blue: 0};
-    pub const DARK_BLUE: Color = Color { red: 0, green: 0, blue: 85};
-
-    pub const FULL_WHITE: Color = Color { red: 255, green: 255, blue: 255 };
-    pub const WHITE: Color = Color { red: 191, green: 191, blue: 191 };
-    pub const GRAY: Color = Color { red: 127, green: 127, blue: 127 };
-    pub const BLACK: Color = Color { red: 63, green: 63, blue: 63 };
-    pub const FULL_BLACK: Color = Color { red: 0, green: 0, blue: 0 };
-
     pub const SKY: Color = Color { red: 50, green: 120, blue: 170};
 
     pub fn new(red: u8, green: u8, blue: u8) -> Self {
@@ -45,6 +29,12 @@ impl Color {
 
     pub fn to_vec(&self) -> [u8; 3] {
         [self.red, self.green, self.blue]
+    }
+}
+
+impl Default for Color {
+    fn default() -> Self {
+        Color::new_gray(0)
     }
 }
 
@@ -99,22 +89,24 @@ pub struct Material {
     pub specular: Color,
 
     pub alpha: u8,
+    pub reflection: u8,
     pub shininess: f32,
 }
 
 impl Material {
-    pub fn new(ambient: Color, diffuse: Color, specular: Color, alpha: u8, shininess: f32) -> Self {
-        Self { ambient, diffuse, specular, alpha, shininess }
+    pub fn new(ambient: Color, diffuse: Color, specular: Color, alpha: u8, reflection: u8, shininess: f32) -> Self {
+        Self { ambient, diffuse, specular, alpha, reflection, shininess }
     }
 }
 
 impl Default for Material {
     fn default() -> Self {
         Self {
-            ambient: Color::BLACK,
-            diffuse: Color::GRAY,
-            specular: Color::WHITE,
+            ambient: Color::new_gray(63),
+            diffuse: Color::new_gray(127),
+            specular: Color::new_gray(191),
             alpha: 255,
+            reflection: 0,
             shininess: 50.0,
         }
     }

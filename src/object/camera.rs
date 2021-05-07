@@ -46,7 +46,7 @@ impl Camera {
      * **scene** The scene to render
      * **file_name** Target file
      */
-    pub fn render_in(&self, scene: &Scene, file_name: &str, thread_count: usize) {
+    pub fn render_in(&self, scene: &Scene, file_name: &str, depth: usize, thread_count: usize) {
         let mut buf = Vec::with_capacity(self.x * self.y);
         let arc_self = Arc::from(self);
         let scene = Arc::from(scene);
@@ -85,7 +85,7 @@ impl Camera {
                                     let mut impact = Vector::zeros(4);
 
                                     let Color { red, green, blue } = match scene.closer(&ray, &mut impact) {
-                                        Some(object) => self.impact_color(&ray, object, &impact, &scene, 0),
+                                        Some(object) => self.impact_color(&ray, object, &impact, &scene, depth),
                                         None => scene.background(),
                                     };
 
@@ -100,7 +100,7 @@ impl Camera {
                                 let mut impact = Vector::zeros(4);
 
                                 match scene.closer(&ray, &mut impact) {
-                                    Some(object) => self.impact_color(&ray, object, &impact, &scene, 0),
+                                    Some(object) => self.impact_color(&ray, object, &impact, &scene, depth),
                                     None => scene.background(),
                                 }
                             });
@@ -126,14 +126,6 @@ impl Camera {
         image::save_buffer(file_name, buf.as_slice(), self.x as u32, self.y as u32, image::ColorType::RGB(8)).unwrap();
     }
 
-    /// Allow to render the Scene **scene** in a file named image.png
-    ///
-    /// ### Params
-    /// **scene** The scene to render
-    pub fn render(&self, scene: &Scene, thread_count: usize) {
-        self.render_in(scene, "image.png", thread_count);
-    }
-
     fn get_ray(&self, x: f32, y: f32) -> Ray {
         match self.focal {
             Focal::Perspective(focal) => {
@@ -153,10 +145,11 @@ impl Camera {
         }
     }
 
-    fn impact_color(&self, ray: &Ray, object: &Box<dyn Object>, impact: &Vector<f32>, scene: &Scene, _profondeur: usize) -> Color {
-        let mut specular = Color::FULL_BLACK;
+    fn impact_color(&self, ray: &Ray, object: &Box<dyn Object>, impact: &Vector<f32>, scene: &Scene, depth: usize) -> Color {
+        let mut specular = Color::default();
+        let mut reflection = Color::default();
         let material = object.material_at(impact);
-        let mut diffuse = material.ambient * scene.ambiant();
+        let mut diffuse = material.ambient * scene.ambient();
         let normal = object.normal(impact, ray.origin());
 
         for light in scene.lights() {
@@ -174,7 +167,24 @@ impl Camera {
             specular += material.specular * (normal.vector() * 2.0 * alpha - vec_light).dot(&-ray.vector()).powf(material.shininess) * light.specular() * alpha;
         }
 
-        diffuse + specular
+        if depth > 0 {
+            if material.reflection > 0 {
+                let mut impact_reflection = Vector::zeros(4);
+                let reflected_ray = object.reflected_ray(ray, impact);
+                let object = scene.closer(&reflected_ray, &mut impact_reflection);
+
+                let coef_reflection = material.reflection as f32 / 255.0;
+                reflection = match object {
+                    None => scene.background(),
+                    Some(object) => {
+                        self.impact_color(&reflected_ray, object, &impact_reflection, scene, depth - 1)
+                    }
+                } * coef_reflection;
+                diffuse = diffuse * (1.0 - coef_reflection);
+            }
+        }
+
+        diffuse + specular + reflection
     }
 }
 

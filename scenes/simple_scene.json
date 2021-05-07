@@ -50,6 +50,7 @@
                     "ambient": 85,
                     "diffuse": 191,
                     "specular": 255,
+                    "reflection": 50,
                     "shininess": 75
                 }
             },
@@ -128,6 +129,7 @@
     },
     "config": {
         "output": "render/simple_scene.png",
-        "threads": 8
+        "threads": 8,
+        "depth": 5
     }
 }

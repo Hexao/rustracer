@@ -7,15 +7,16 @@ pub struct Texture {
     image: DynamicImage,
     rep_x: f32,
     rep_y: f32,
+    reflection: u8,
     shininess: f32,
 }
 
 impl Texture {
-    pub fn new(file_name: &str, rep_x: usize, rep_y: usize, shininess: f32) -> Self {
+    pub fn new(file_name: &str, rep_x: usize, rep_y: usize, reflection: u8, shininess: f32) -> Self {
         let image = Reader::open(file_name).unwrap().decode().unwrap();
         assert!(rep_x > 0 && rep_y > 0);
 
-        Self { image, rep_x: rep_x as f32, rep_y: rep_y as f32, shininess }
+        Self { image, rep_x: rep_x as f32, rep_y: rep_y as f32, reflection, shininess }
     }
 }
 
@@ -33,6 +34,7 @@ impl MatProvider for Texture {
             color,
             color * 1.5,
             pix[3],
+            self.reflection,
             self.shininess
         )
     }
