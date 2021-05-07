@@ -1,3 +1,5 @@
+pub mod strip_x_mat;
+pub mod strip_y_mat;
 pub mod simple_mat;
 pub mod texture;
 
@@ -103,5 +105,17 @@ pub struct Material {
 impl Material {
     pub fn new(ambient: Color, diffuse: Color, specular: Color, alpha: u8, shininess: f32) -> Self {
         Self { ambient, diffuse, specular, alpha, shininess }
+    }
+}
+
+impl Default for Material {
+    fn default() -> Self {
+        Self {
+            ambient: Color::BLACK,
+            diffuse: Color::GRAY,
+            specular: Color::WHITE,
+            alpha: 255,
+            shininess: 50.0,
+        }
     }
 }

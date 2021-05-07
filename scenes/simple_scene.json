@@ -6,7 +6,7 @@
                 "type": "SIMPLE",
                 "mat": {
                     "ambient": [85, 0, 0],
-                    "diffuse": [170, 0, 0],
+                    "diffuse": [191, 0, 0],
                     "specular": [255, 120, 120],
                     "shininess": 50,
                     "alpha": 255
@@ -16,12 +16,19 @@
         },{
             "type": "SPHERE",
             "material": {
-                "type": "SIMPLE",
-                "mat": {
-                    "ambient": [0, 85, 0],
-                    "diffuse": [0, 170, 0],
-                    "specular": [120, 255, 120]
-                }
+                "type": "STRIP_Y",
+                "rep": 10,
+                "mat": [
+                    {
+                        "ambient": [0, 85, 0],
+                        "diffuse": [0, 191, 0],
+                        "specular": [120, 255, 120]
+                    },{
+                        "ambient": [85, 0, 85],
+                        "diffuse": [191, 0, 191],
+                        "specular": [255, 120, 255]
+                    }
+                ]
             },
             "transform": [-5, 0, 15]
         },{
@@ -30,7 +37,7 @@
                 "type": "SIMPLE",
                 "mat": {
                     "ambient": [0, 0, 85],
-                    "diffuse": [0, 0, 170],
+                    "diffuse": [0, 0, 191],
                     "specular": [120, 120, 255]
                 }
             },
@@ -40,7 +47,7 @@
             "material": {
                 "type": "SIMPLE",
                 "mat": {
-                    "ambient": 127,
+                    "ambient": 85,
                     "diffuse": 191,
                     "specular": 255,
                     "shininess": 75
@@ -48,15 +55,14 @@
             },
             "transform": [0, 0, 15]
         },{
-            "type": "PLANE",
+            "type": "SPHERE",
             "material": {
                 "type": "TEXTURE",
-                "resource": "texture/pito.png",
-                "shininess": 70
+                "rep": [6, 3],
+                "resource": "texture/pito.png"
             },
-            "transform": [0, -1, 15],
-            "rotate": [90, 0, 0],
-            "scale": 2.5
+            "transform": [2.5, 0, 15],
+            "rotate": [0, 0, 0]
         },{
             "type": "SPHERE",
             "material": {
@@ -71,23 +77,31 @@
         },{
             "type": "SPHERE",
             "material": {
-                "type": "SIMPLE",
-                "mat": {
-                    "ambient": [0, 0, 85],
-                    "diffuse": [0, 0, 191],
-                    "specular": [120, 120, 255]
-                }
+                "type": "STRIP_X",
+                "rep": 10,
+                "mat": [
+                    {
+                        "ambient": [0, 0, 85],
+                        "diffuse": [0, 0, 191],
+                        "specular": [120, 120, 255]
+                    },{
+                        "ambient": [85, 0, 0],
+                        "diffuse": [191, 0, 0],
+                        "specular": [255, 120, 120]
+                    }
+                ]
             },
             "transform": [7.5, 0, 15]
         },{
-            "type": "SPHERE",
+            "type": "PLANE",
             "material": {
                 "type": "TEXTURE",
-                "rep": [6, 3],
-                "resource": "texture/pito.png"
+                "resource": "texture/pito.png",
+                "shininess": 70
             },
-            "transform": [2.5, 0, 15],
-            "rotate": [0, 0, 0]
+            "transform": [0, -1, 15],
+            "rotate": [90, 0, 0],
+            "scale": 2.5
         }
     ],
     "lights": [
