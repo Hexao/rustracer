@@ -3,9 +3,7 @@
         "ambient": 191
     },
     "camera": {
-        "size": [740, 740],
-        "flags": [
-        ]
+        "size": [740, 740]
     },
     "objects": [
         {

@@ -168,6 +168,20 @@ impl Camera {
         }
 
         if depth > 0 {
+            if material.alpha < 255 {
+                let mut impact_refraction = Vector::zeros(4);
+                let refraction_ray = object.refracted_ray(ray, impact);
+                let object = scene.closer(&refraction_ray, &mut impact_refraction);
+
+                let coef_refraction = material.alpha as f32 / 255.0;
+                diffuse = diffuse * coef_refraction + match object {
+                    None => scene.background(),
+                    Some(object) => {
+                        self.impact_color(&refraction_ray, object, &impact_refraction, scene, depth - 1)
+                    }
+                } * (1.0 - coef_refraction);
+            }
+
             if material.reflection > 0 {
                 let mut impact_reflection = Vector::zeros(4);
                 let reflected_ray = object.reflected_ray(ray, impact);

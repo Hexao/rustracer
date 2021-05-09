@@ -10,13 +10,15 @@ pub struct Plane {
     inv: Matrix<f32>,
 
     mat: Box<dyn MatProvider>,
+    coef_refraction: f32,
 }
 
 impl Plane {
-    pub fn new(mat: Box<dyn MatProvider>) -> Self {
+    pub fn new(mat: Box<dyn MatProvider>, coef_refraction: f32) -> Self {
         Self {
             tra: Matrix::identity(4),
             inv: Matrix::identity(4),
+            coef_refraction,
             mat,
         }
     }
@@ -70,5 +72,15 @@ impl Object for Plane {
         let y = (if local[1] < 0.0 { 0.0 } else { 1.0 } - local[1] % 1.0).abs();
 
         self.mat.material(x, y)
+    }
+
+    fn outter_normal(&self, impact: &Vector<f32>) -> Vector<f32> {
+        let observer = Vector::new(vec![0.0, 0.0, 1.0, 1.0]);
+        let (_origin, vector) = self.normal(impact, &self.local_to_global_point(observer)).consume();
+        vector
+    }
+
+    fn coef_refraction(&self) -> f32 {
+        self.coef_refraction
     }
 }

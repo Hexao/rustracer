@@ -16,6 +16,7 @@ use material::{
     strip_x_mat::StripXMat,
     strip_y_mat::StripYMat,
     simple_mat::SimpleMat,
+    grid_mat::GridMat,
     texture::Texture,
     MatProvider,
     Material,
@@ -360,6 +361,100 @@ fn parse_objects(scene: &mut Scene, json: &Map<String, Value>) -> Result<(), Mal
 
                     Box::new(StripYMat::new(mat[0], mat[1], rep))
                 }
+                "GRID" => {
+                    let materials = match match material.get("mat") {
+                        None => return Err(Malformed::Object(id, InnerError::MissingField("material/mat"))),
+                        Some(material) => material,
+                    }.as_array() {
+                        None => return Err(Malformed::Object(id, InnerError::FieldArray("material/mat", "Material", 2))),
+                        Some(material) => material,
+                    };
+
+                    let mut mat: [Material; 2] = [
+                        Material::default(), Material::default()
+                    ];
+
+                    for (mat_id, material) in materials.iter().enumerate() {
+                        let material = match material.as_object() {
+                            None => return Err(Malformed::Object(id, InnerError::WrongField("material/mat/<element>", "Object"))),
+                            Some(material) => material,
+                        };
+
+                        let ambient = match get_color(material, "ambient", "material/mat/ambient") {
+                            Err(obj_err) => return Err(Malformed::Object(id, obj_err)),
+                            Ok(color) => color,
+                        };
+                        let diffuse = match get_color(material, "diffuse", "material/mat/diffuse") {
+                            Err(obj_err) => return Err(Malformed::Object(id, obj_err)),
+                            Ok(color) => color,
+                        };
+                        let specular = match get_color(material, "specular", "material/mat/specular") {
+                            Err(obj_err) => return Err(Malformed::Object(id, obj_err)),
+                            Ok(color) => color,
+                        };
+                        let alpha = match material.get("alpha") {
+                            None => 255,
+                            Some(alpha) => match alpha.as_u64() {
+                                None => return Err(Malformed::Object(id, InnerError::WrongField("material/mat/alpha", "u8"))),
+                                Some(alpha) => alpha as u8,
+                            },
+                        };
+                        let reflection = match material.get("reflection") {
+                            None => 0,
+                            Some(reflection) => match reflection.as_u64() {
+                                None => return Err(Malformed::Object(id, InnerError::WrongField("material/mat/reflection", "u8"))),
+                                Some(shininess) => shininess as u8,
+                            },
+                        };
+                        let shininess = match material.get("shininess") {
+                            None => 50.0,
+                            Some(shininess) => match shininess.as_f64() {
+                                None => return Err(Malformed::Object(id, InnerError::WrongField("material/mat/shininess", "Float"))),
+                                Some(shininess) => shininess as f32,
+                            },
+                        };
+
+                        mat[mat_id] = Material::new(ambient, diffuse, specular, alpha, reflection, shininess);
+                    }
+                    
+                    let (rep_x, rep_y) = match material.get("rep") {
+                        None => (
+                            match material.get("repX") {
+                                None => 1,
+                                Some(rep) => match rep.as_u64() {
+                                    None => return Err(Malformed::Object(id, InnerError::WrongField("material/repX", "Unsigned"))),
+                                    Some(rep) => rep as usize,
+                                }
+                            },
+                            match material.get("repY") {
+                                None => 1,
+                                Some(rep) => match rep.as_u64() {
+                                    None => return Err(Malformed::Object(id, InnerError::WrongField("material/repX", "Unsigned"))),
+                                    Some(rep) => rep as usize,
+                                }
+                            }
+                        ),
+                        Some(rep) => match rep.as_array() {
+                            None => return Err(Malformed::Object(id, InnerError::FieldArray("material/rep", "Int", 2))),
+                            Some(rep) => if rep.len() == 2 {
+                                let x = match rep[0].as_u64() {
+                                    None => return Err(Malformed::Object(id, InnerError::FieldArray("material/rep", "Int", 2))),
+                                    Some(x) => x as usize,
+                                };
+                                let y = match rep[1].as_u64() {
+                                    None => return Err(Malformed::Object(id, InnerError::FieldArray("material/rep", "Int", 2))),
+                                    Some(x) => x as usize,
+                                };
+
+                                (x, y)
+                            } else {
+                                return Err(Malformed::Object(id, InnerError::FieldArray("material/rep", "Int", 2)))
+                            }
+                        }
+                    };
+
+                    Box::new(GridMat::new(mat[0], mat[1], rep_x, rep_y))
+                }
                 "TEXTURE" => {
                     let file_name = match match material.get("resource") {
                         None => return Err(Malformed::Object(id, InnerError::MissingField("material/resource"))),
@@ -425,9 +520,17 @@ fn parse_objects(scene: &mut Scene, json: &Map<String, Value>) -> Result<(), Mal
                 unknown => return Err(Malformed::Object(id, InnerError::UnknownMaterial(unknown.to_owned()))),
             };
 
+            let coef_refraction = match object.get("refraction") {
+                None => 1.0,
+                Some(refraction) => match refraction.as_f64() {
+                    None => return Err(Malformed::Object(id, InnerError::WrongField("refraction", "Float"))),
+                    Some(refraction) => refraction as f32,
+                }
+            };
+
             let mut scn_object: Box<dyn Object> = match obj_type {
-                "SPHERE" => Box::new(Sphere::new(mat_object)),
-                "PLANE" => Box::new(Plane::new(mat_object)),
+                "SPHERE" => Box::new(Sphere::new(mat_object, coef_refraction)),
+                "PLANE" => Box::new(Plane::new(mat_object, coef_refraction)),
                 unknown => return Err(Malformed::Object(id, InnerError::UnknownType(unknown.to_owned()))),
             };
 

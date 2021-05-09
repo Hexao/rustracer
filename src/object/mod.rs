@@ -125,17 +125,45 @@ pub trait Object: Movable {
     fn intersect(&self, ray: &Ray, impact: &mut Vector<f32>) -> bool;
     fn normal(&self, at: &Vector<f32>, observer: &Vector<f32>) -> Ray;
     fn material_at(&self, impact: &Vector<f32>) -> Material;
+    fn outter_normal(&self, impact: &Vector<f32>) -> Vector<f32>;
+    fn coef_refraction(&self) -> f32;
 
     fn reflected_ray(&self, ray: &Ray, impact: &Vector<f32>) -> Ray {
         let normal = self.normal(impact, ray.origin());
 
-        let gap = 0.001;
+        let gap = 0.0005;
         let dot = ray.vector().dot(normal.vector());
         let reflected = ray.vector() - normal.vector() * 2.0 * dot;
 
         Ray::new(
             impact[0] + reflected[0] * gap, impact[1] + reflected[1] * gap, impact[2] + reflected[2] * gap,
             reflected[0], reflected[1], reflected[2]
+        )
+    }
+
+    fn refracted_ray(&self, ray: &Ray, impact: &Vector<f32>) -> Ray {
+        let mut normal = self.outter_normal(impact);
+
+        let mut cosi = ray.vector().dot(&normal);
+        let eta = if cosi < 0.0 {
+            cosi = -cosi;
+            1.0 / self.coef_refraction()
+        } else {
+            normal = -normal;
+            self.coef_refraction() / 1.0
+        };
+
+        let k = 1.0 - eta * eta * (1.0 - cosi * cosi);
+        let refracted = if k < 0.0 {
+            Vector::zeros(4)
+        } else {
+            ray.vector() * eta + normal * (eta * cosi - k.sqrt())
+        };
+
+        let gap = 0.0005;
+        Ray::new(
+            impact[0] + refracted[0] * gap, impact[1] + refracted[1] * gap, impact[2] + refracted[2] * gap,
+            refracted[0], refracted[1], refracted[2]
         )
     }
 }

@@ -13,13 +13,15 @@ pub struct Sphere {
     inv: Matrix<f32>,
 
     mat: Box<dyn MatProvider>,
+    coef_refraction: f32,
 }
 
 impl Sphere {
-    pub fn new(mat: Box<dyn MatProvider>) -> Self {
+    pub fn new(mat: Box<dyn MatProvider>, coef_refraction: f32) -> Self {
         Self {
             tra: Matrix::identity(4),
             inv: Matrix::identity(4),
+            coef_refraction,
             mat,
         }
     }
@@ -98,5 +100,14 @@ impl Object for Sphere {
         let y = impact[1].acos() / PI;
 
         self.mat.material(x, y)
+    }
+
+    fn outter_normal(&self, impact: &Vector<f32>) -> Vector<f32> {
+        let observer = Vector::new(vec![0.0, 0.0, 0.0, 1.0]);
+        -self.normal(impact, &self.local_to_global_point(observer)).vector()
+    }
+
+    fn coef_refraction(&self) -> f32 {
+        self.coef_refraction
     }
 }

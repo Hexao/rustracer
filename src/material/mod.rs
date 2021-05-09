@@ -1,6 +1,7 @@
 pub mod strip_x_mat;
 pub mod strip_y_mat;
 pub mod simple_mat;
+pub mod grid_mat;
 pub mod texture;
 
 use std::ops::{Mul, Add, AddAssign};

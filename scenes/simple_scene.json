@@ -36,11 +36,13 @@
             "material": {
                 "type": "SIMPLE",
                 "mat": {
-                    "ambient": [0, 0, 85],
-                    "diffuse": [0, 0, 191],
-                    "specular": [120, 120, 255]
+                    "ambient": 0,
+                    "diffuse": 0,
+                    "specular": 0,
+                    "alpha": 25
                 }
             },
+            "refraction": 2.75,
             "transform": [-2.5, 0, 15]
         },{
             "type": "SPHERE",
@@ -96,9 +98,18 @@
         },{
             "type": "PLANE",
             "material": {
-                "type": "TEXTURE",
-                "resource": "texture/pito.png",
-                "shininess": 70
+                "type": "GRID",
+                "mat": [
+                    {
+                        "ambient": 85,
+                        "diffuse": 191,
+                        "specular": 255
+                    },{
+                        "ambient": 0,
+                        "diffuse": 65,
+                        "specular": 255
+                    }
+                ]
             },
             "transform": [0, -1, 15],
             "rotate": [90, 0, 0],
@@ -113,6 +124,13 @@
                 "specular": 255
             },
             "transform": [2.5, 7.5, 0]
+        },{
+            "type": "POINT",
+            "color": {
+                "diffuse": [191, 0, 0],
+                "specular": 0
+            },
+            "transform": [2.5, 0, 15]
         }
     ],
     "camera": {
