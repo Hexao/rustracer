@@ -1,10 +1,10 @@
 use crate::object::{Movable, Object};
+use crate::math::point::Point;
 use crate::material::Color;
 use crate::math::ray::Ray;
 use crate::scene::Scene;
 
 use rulinalg::matrix::Matrix;
-use rulinalg::vector::Vector;
 use std::sync::Arc;
 use crossbeam;
 
@@ -25,6 +25,7 @@ pub struct Camera {
 
 impl Camera {
     pub const ANTI_ALIASING: u8 = 1;
+    pub const NO_SHADOW    : u8 = 2;
 
     pub fn new(x: usize, y: usize, focal: Focal) -> Self {
         Camera {
@@ -81,8 +82,8 @@ impl Camera {
                                 let mut sb = 0;
 
                                 for (ox, oy) in &offsets {
-                                    let ray = arc_self.local_to_global_ray(arc_self.get_ray(x as f32 + ox, y as f32 + oy));
-                                    let mut impact = Vector::zeros(4);
+                                    let ray = arc_self.local_to_global_ray(&arc_self.get_ray(x as f32 + ox, y as f32 + oy));
+                                    let mut impact = Point::default();
 
                                     let Color { red, green, blue } = match scene.closer(&ray, &mut impact) {
                                         Some(object) => self.impact_color(&ray, object, &impact, &scene, depth),
@@ -96,8 +97,8 @@ impl Camera {
 
                                 Color::new((sr / 4) as u8, (sg / 4) as u8, (sb / 4) as u8)
                             } else {
-                                let ray = arc_self.local_to_global_ray(arc_self.get_ray(x as f32, y as f32));
-                                let mut impact = Vector::zeros(4);
+                                let ray = arc_self.local_to_global_ray(&arc_self.get_ray(x as f32, y as f32));
+                                let mut impact = Point::default();
 
                                 match scene.closer(&ray, &mut impact) {
                                     Some(object) => self.impact_color(&ray, object, &impact, &scene, depth),
@@ -133,19 +134,25 @@ impl Camera {
                 let px =  (x - self.x as f32 / 2.0) / size as f32;
                 let py = -(y - self.y as f32 / 2.0) / size as f32;
 
-                Ray::new(px, py, 0.0, px, py, focal).normalized()
+                let origin = Point::new(px, py, 0.0);
+                let vector = Point::new(px, py, focal);
+
+                Ray::new(origin, vector).normalized()
             }
             Focal::Orthographic(focal) => {
                 let size = self.x.min(self.y) as f32 / focal;
                 let px =  (x - self.x as f32 / 2.0) / size;
                 let py = -(y - self.y as f32 / 2.0) / size;
 
-                Ray::new(px, py, 0.0, 0.0, 0.0, 1.0)
+                let origin = Point::new(px, py, 0.0);
+                let vector = Point::new(0.0, 0.0, 1.0);
+
+                Ray::new(origin, vector)
             }
         }
     }
 
-    fn impact_color(&self, ray: &Ray, object: &Box<dyn Object>, impact: &Vector<f32>, scene: &Scene, depth: usize) -> Color {
+    fn impact_color(&self, ray: &Ray, object: &Box<dyn Object>, impact: &Point, scene: &Scene, depth: usize) -> Color {
         let mut specular = Color::default();
         let mut reflection = Color::default();
         let material = object.material_at(impact);
@@ -163,13 +170,19 @@ impl Camera {
                 continue;
             }
 
-            diffuse += material.diffuse * light.diffuse() * alpha;
+            let shadow = if (self.flags & Camera::NO_SHADOW) != 0 {
+                Color::new_gray(255)
+            } else {
+                scene.light_filter(impact, light)
+            };
+
+            diffuse += material.diffuse * light.diffuse() * alpha * shadow;
             specular += material.specular * (normal.vector() * 2.0 * alpha - vec_light).dot(&-ray.vector()).powf(material.shininess) * light.specular() * alpha;
         }
 
         if depth > 0 {
             if material.alpha < 255 {
-                let mut impact_refraction = Vector::zeros(4);
+                let mut impact_refraction = Point::default();
                 let refraction_ray = object.refracted_ray(ray, impact);
                 let object = scene.closer(&refraction_ray, &mut impact_refraction);
 
@@ -183,7 +196,7 @@ impl Camera {
             }
 
             if material.reflection > 0 {
-                let mut impact_reflection = Vector::zeros(4);
+                let mut impact_reflection = Point::default();
                 let reflected_ray = object.reflected_ray(ray, impact);
                 let object = scene.closer(&reflected_ray, &mut impact_reflection);
 

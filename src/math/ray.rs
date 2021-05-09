@@ -1,30 +1,26 @@
-use rulinalg::norm::Euclidean;
-use rulinalg::vector::Vector;
+use crate::math::point::Point;
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Ray {
-    origin: Vector<f32>,
-    vector: Vector<f32>,
+    origin: Point,
+    vector: Point,
 }
 
 impl Ray {
-    pub fn new(ox: f32, oy: f32, oz: f32, vx: f32, vy: f32, vz: f32) -> Self {
-        Ray {
-            origin: Vector::new(vec![ox, oy, oz, 1.0]),
-            vector: Vector::new(vec![vx, vy, vz, 0.0]),
-        }
+    pub fn new(origin: Point, vector: Point) -> Self {
+        Self { origin, vector }
     }
 
-    pub fn origin(&self) -> &Vector<f32> {
+    pub fn origin(&self) -> &Point {
         &self.origin
     }
 
-    pub fn vector(&self) -> &Vector<f32> {
+    pub fn vector(&self) -> &Point {
         &self.vector
     }
 
     pub fn normalized(self) -> Self {
-        let ray_norm = self.vector.norm(Euclidean);
+        let ray_norm = self.vector.norm();
 
         Ray {
             origin: self.origin,
@@ -32,7 +28,7 @@ impl Ray {
         }
     }
 
-    pub fn consume(self) -> (Vector<f32>, Vector<f32>) {
+    pub fn consume(self) -> (Point, Point) {
         (self.origin, self.vector)
     }
 }

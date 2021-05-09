@@ -2,50 +2,42 @@ pub mod point_light;
 
 use crate::material::Color;
 use crate::object::Movable;
-use crate::math::ray::Ray;
-
-use rulinalg::norm::Euclidean;
-use rulinalg::vector::Vector;
+use crate::math::{
+    point::Point,
+    ray::Ray
+};
 
 pub trait Light: Movable {
-    fn vec_from_light(&self, point: &Vector<f32>) -> Vector<f32> {
-        let vec = self.local_to_global_vector(self.global_to_local_point(point.clone()));
-        let norm = vec.norm(Euclidean);
-        vec / norm
+    fn vec_from_light(&self, point: &Point) -> Point {
+        let vec = self.local_to_global_vector(&self.global_to_local_point(point));
+        vec.normalized()
     }
 
-    fn vec_to_light(&self, point: &Vector<f32>) -> Vector<f32> {
-        let vec = self.local_to_global_vector(-self.global_to_local_point(point.clone()));
-        let norm = vec.norm(Euclidean);
-        vec / norm
+    fn vec_to_light(&self, point: &Point) -> Point {
+        let vec = self.local_to_global_vector(&-self.global_to_local_point(point));
+        vec.normalized()
     }
 
-    fn ray_from_light(&self, point: &Vector<f32>) -> Ray {
-        let local = self.global_to_local_point(point.clone());
-        let ray = Ray::new(
-            0.0, 0.0, 0.0,
-            local[0], local[1], local[2]
-        );
+    fn ray_from_light(&self, point: &Point) -> Ray {
+        let local = self.global_to_local_point(point);
+        let ray = Ray::new(Point::default(), local);
 
-        self.local_to_global_ray(ray).normalized()
+        self.local_to_global_ray(&ray).normalized()
     }
 
-    fn ray_to_light(&self, point: &Vector<f32>) -> Ray {
-        let local = self.global_to_local_point(point.clone());
-        let ray = Ray::new(
-            local[0], local[1], local[2],
-            -local[0], -local[1], -local[2]
-        );
+    fn ray_to_light(&self, point: &Point) -> Ray {
+        let local = self.global_to_local_point(point);
+        let ray = Ray::new(local, -local);
 
-        self.local_to_global_ray(ray).normalized()
+        self.local_to_global_ray(&ray).normalized()
     }
 
-    fn distance(&self, to: &Vector<f32>) -> f32 {
-        let point = self.global_to_local_point(to.clone());
-        point.norm(Euclidean)
+    fn distance(&self, to: &Point) -> f32 {
+        let point = self.global_to_local_point(to);
+        point.norm()
     }
 
-    fn illuminate(&self, point: &Vector<f32>) -> bool;
+    fn illuminate(&self, point: &Point) -> bool;
 
     fn diffuse(&self) -> Color;
     fn specular(&self) -> Color;

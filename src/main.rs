@@ -785,6 +785,7 @@ fn parse_camera(json: &Map<String, Value>) -> Result<Camera, Malformed> {
 
                         match flag {
                             "ANTI_ALIASING" => flags |= Camera::ANTI_ALIASING,
+                            "NO_SHADOW" => flags |= Camera::NO_SHADOW,
                             unknown => return Err(Malformed::Camera(InnerError::UnknownFlag(unknown.to_owned()))),
                         }
                     }

@@ -1,0 +1,55 @@
+{
+    "objects": [
+        {
+            "type": "SPHERE",
+            "material": {
+                "type": "SIMPLE",
+                "mat": {
+                    "ambient": 80,
+                    "diffuse": 191,
+                    "specular": 0
+                }
+            },
+            "transform": [0, 0, 5]
+        }
+    ],
+    "lights": [
+        {
+            "type": "POINT",
+            "color": {
+                "diffuse": [190, 0, 0],
+                "specular": 0
+            },
+            "transform": [0, 2.5, 1.5]
+        },{
+            "type": "POINT",
+            "color": {
+                "diffuse": [0, 190, 0],
+                "specular": 0
+            },
+            "transform": [-2.15, -1.25, 1.5]
+        },{
+            "type": "POINT",
+            "color": {
+                "diffuse": [0, 0, 190],
+                "specular": 0
+            },
+            "transform": [2.12, -1.25, 1.5]
+        }
+    ],
+    "camera": {
+        "size": [1920, 1920],
+        "focal": {
+            "type": "ORTHOGRAPHIC",
+            "size": 2.2
+        },
+        "flags": [
+            "NO_SHADOW",
+            "ANTI_ALIASING"
+        ]
+    },
+    "config": {
+        "output": "render/beautiful.png",
+        "threads": 8
+    }
+}

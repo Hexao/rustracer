@@ -4,9 +4,11 @@ pub mod plane;
 pub mod light;
 
 use crate::material::Material;
-use crate::math::ray::Ray;
+use crate::math::{
+    point::Point,
+    ray::Ray
+};
 
-use rulinalg::vector::Vector;
 use rulinalg::matrix::Matrix;
 
 pub trait Movable {
@@ -16,42 +18,40 @@ pub trait Movable {
     fn inv(&self) -> &Matrix<f32>;
     fn inv_mut(&mut self) -> &mut Matrix<f32>;
 
-    fn local_to_global_ray(&self, ray: Ray) -> Ray {
-        let (o, v) = ray.consume();
-        let origin = self.local_to_global_point(o);
-        let vector = self.local_to_global_vector(v);
-
-        Ray::new(origin[0], origin[1], origin[2], vector[0], vector[1], vector[2])
+    fn local_to_global_ray(&self, ray: &Ray) -> Ray {
+        let origin = self.local_to_global_point(ray.origin());
+        let vector = self.local_to_global_vector(ray.vector());
+        Ray::new(origin, vector)
     }
 
-    fn local_to_global_point(&self, mut pts: Vector<f32>) -> Vector<f32> {
-        pts[3] = 1.0;
-        pts = self.tra() * pts;
-        &pts / pts[3]
+    fn local_to_global_point(&self, pts: &Point) -> Point {
+        let pts = pts.into_pt4();
+        let pts = self.tra() * pts;
+        pts.into_pt()
     }
 
-    fn local_to_global_vector(&self, mut vec: Vector<f32>) -> Vector<f32> {
-        vec[3] = 0.0;
-        self.tra() * vec
+    fn local_to_global_vector(&self, vec: &Point) -> Point {
+        let vec = vec.into_vec4();
+        let vec = self.tra() * vec;
+        vec.into_vec()
     }
 
-    fn global_to_local_ray(&self, ray: Ray) -> Ray {
-        let (o, v) = ray.consume();
-        let origin = self.global_to_local_point(o);
-        let vector = self.global_to_local_vector(v);
-
-        Ray::new(origin[0], origin[1], origin[2], vector[0], vector[1], vector[2])
+    fn global_to_local_ray(&self, ray: &Ray) -> Ray {
+        let origin = self.global_to_local_point(ray.origin());
+        let vector = self.global_to_local_vector(ray.vector());
+        Ray::new(origin, vector)
     }
 
-    fn global_to_local_point(&self, mut pts: Vector<f32>) -> Vector<f32> {
-        pts[3] = 1.0;
-        pts = self.inv() * pts;
-        &pts / pts[3]
+    fn global_to_local_point(&self, pts: &Point) -> Point {
+        let pts = pts.into_pt4();
+        let pts = self.inv() * pts;
+        pts.into_pt()
     }
 
-    fn global_to_local_vector(&self, mut vec: Vector<f32>) -> Vector<f32> {
-        vec[3] = 0.0;
-        self.inv() * vec
+    fn global_to_local_vector(&self, vec: &Point) -> Point {
+        let vec = vec.into_vec4();
+        let vec = self.inv() * vec;
+        vec.into_vec()
     }
 
     fn move_global(&mut self, x: f32, y: f32, z: f32) {
@@ -122,26 +122,23 @@ pub trait Movable {
 }
 
 pub trait Object: Movable {
-    fn intersect(&self, ray: &Ray, impact: &mut Vector<f32>) -> bool;
-    fn normal(&self, at: &Vector<f32>, observer: &Vector<f32>) -> Ray;
-    fn material_at(&self, impact: &Vector<f32>) -> Material;
-    fn outter_normal(&self, impact: &Vector<f32>) -> Vector<f32>;
+    fn intersect(&self, ray: &Ray, impact: &mut Point) -> bool;
+    fn normal(&self, at: &Point, observer: &Point) -> Ray;
+    fn material_at(&self, impact: &Point) -> Material;
+    fn outter_normal(&self, impact: &Point) -> Point;
     fn coef_refraction(&self) -> f32;
 
-    fn reflected_ray(&self, ray: &Ray, impact: &Vector<f32>) -> Ray {
+    fn reflected_ray(&self, ray: &Ray, impact: &Point) -> Ray {
         let normal = self.normal(impact, ray.origin());
 
         let gap = 0.0005;
         let dot = ray.vector().dot(normal.vector());
         let reflected = ray.vector() - normal.vector() * 2.0 * dot;
 
-        Ray::new(
-            impact[0] + reflected[0] * gap, impact[1] + reflected[1] * gap, impact[2] + reflected[2] * gap,
-            reflected[0], reflected[1], reflected[2]
-        )
+        Ray::new(impact + reflected * gap, reflected)
     }
 
-    fn refracted_ray(&self, ray: &Ray, impact: &Vector<f32>) -> Ray {
+    fn refracted_ray(&self, ray: &Ray, impact: &Point) -> Ray {
         let mut normal = self.outter_normal(impact);
 
         let mut cosi = ray.vector().dot(&normal);
@@ -155,15 +152,12 @@ pub trait Object: Movable {
 
         let k = 1.0 - eta * eta * (1.0 - cosi * cosi);
         let refracted = if k < 0.0 {
-            Vector::zeros(4)
+            Point::default()
         } else {
             ray.vector() * eta + normal * (eta * cosi - k.sqrt())
         };
 
         let gap = 0.0005;
-        Ray::new(
-            impact[0] + refracted[0] * gap, impact[1] + refracted[1] * gap, impact[2] + refracted[2] * gap,
-            refracted[0], refracted[1], refracted[2]
-        )
+        Ray::new(impact + refracted * gap, refracted)
     }
 }

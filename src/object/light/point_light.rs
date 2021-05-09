@@ -1,3 +1,4 @@
+use crate::math::point::Point;
 use crate::material::Color;
 use crate::object::{
     light::Light,
@@ -5,7 +6,6 @@ use crate::object::{
 };
 
 use rulinalg::matrix::Matrix;
-use rulinalg::vector::Vector;
 
 pub struct PointLight {
     tra: Matrix<f32>,
@@ -44,7 +44,7 @@ impl Movable for PointLight {
 }
 
 impl Light for PointLight {
-    fn illuminate(&self, _point: &Vector<f32>) -> bool {
+    fn illuminate(&self, _point: &Point) -> bool {
         true
     }
 

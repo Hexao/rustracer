@@ -1,10 +1,11 @@
 use crate::material::{MatProvider, Material};
 use crate::object::{Movable, Object};
-use crate::math::ray::Ray;
+use crate::math::{
+    point::Point,
+    ray::Ray
+};
 
-use rulinalg::norm::Euclidean;
 use rulinalg::matrix::Matrix;
-use rulinalg::vector::Vector;
 use std::f32::consts::TAU;
 use std::f32::consts::PI;
 
@@ -46,13 +47,13 @@ impl Movable for Sphere {
 }
 
 impl Object for Sphere {
-    fn intersect(&self, ray: &Ray, impact: &mut Vector<f32>) -> bool {
-        let ray = self.global_to_local_ray(ray.clone());
+    fn intersect(&self, ray: &Ray, impact: &mut Point) -> bool {
+        let ray = self.global_to_local_ray(ray);
         let (origin, vector) = ray.consume();
 
-        let a = vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2];
-        let b = 2.0 * (vector[0] * origin[0] + vector[1] * origin[1] + vector[2] * origin[2]);
-        let c = origin[0] * origin[0] + origin[1] * origin[1] + origin[2] * origin[2] - 1.0;
+        let a = vector.x * vector.x + vector.y * vector.y + vector.z * vector.z;
+        let b = 2.0 * (vector.x * origin.x + vector.y * origin.y + vector.z * origin.z);
+        let c = origin.x * origin.x + origin.y * origin.y + origin.z * origin.z - 1.0;
         let d = b * b - 4.0 * a * c;
 
         if d >= 0. {
@@ -68,45 +69,38 @@ impl Object for Sphere {
                 origin + vector * x2
             };
 
-            *impact = self.local_to_global_point(imp);
+            *impact = self.local_to_global_point(&imp);
             true
         } else {
             false
         }
     }
 
-    fn normal(&self, at: &Vector<f32>, observer: &Vector<f32>) -> Ray {
-        let local = self.global_to_local_point(at.clone());
-        let mut observer = self.global_to_local_point(observer.clone());
-        observer[3] = 0.0;
+    fn normal(&self, at: &Point, observer: &Point) -> Ray {
+        let local = self.global_to_local_point(at);
+        let observer = self.global_to_local_point(observer);
 
-        let ray = if observer.norm(Euclidean) > 1.0 {
-            Ray::new(
-                local[0], local[1], local[2],
-                local[0], local[1], local[2]
-            )
+        let ray = if observer.norm() > 1.0 {
+            Ray::new(local, local)
         } else {
-            Ray::new(
-                local[0], local[1], local[2],
-                -local[0], -local[1], -local[2]
-            )
+            Ray::new(local, -local)
         };
 
-        self.local_to_global_ray(ray).normalized()
+        self.local_to_global_ray(&ray).normalized()
     }
 
-    fn material_at(&self, impact: &Vector<f32>) -> Material {
-        let impact = self.global_to_local_point(impact.clone());
+    fn material_at(&self, impact: &Point) -> Material {
+        let impact = self.global_to_local_point(impact);
 
-        let x = impact[2].atan2(impact[0]) / TAU + 0.5;
-        let y = impact[1].acos() / PI;
+        let x = impact.z.atan2(impact.x) / TAU + 0.5;
+        let y = impact.y.acos() / PI;
 
         self.mat.material(x, y)
     }
 
-    fn outter_normal(&self, impact: &Vector<f32>) -> Vector<f32> {
-        let observer = Vector::new(vec![0.0, 0.0, 0.0, 1.0]);
-        -self.normal(impact, &self.local_to_global_point(observer)).vector()
+    fn outter_normal(&self, impact: &Point) -> Point {
+        let observer = Point::default();
+        -self.normal(impact, &self.local_to_global_point(&observer)).vector()
     }
 
     fn coef_refraction(&self) -> f32 {

@@ -1,8 +1,10 @@
 use crate::material::{MatProvider, Material};
 use crate::object::{Movable, Object};
-use crate::math::ray::Ray;
+use crate::math::{
+    point::Point,
+    ray::Ray
+};
 
-use rulinalg::vector::Vector;
 use rulinalg::matrix::Matrix;
 
 pub struct Plane {
@@ -43,40 +45,37 @@ impl Movable for Plane {
 }
 
 impl Object for Plane {
-    fn intersect(&self, ray: &Ray, impact: &mut Vector<f32>) -> bool {
-        let ray = self.global_to_local_ray(ray.clone());
+    fn intersect(&self, ray: &Ray, impact: &mut Point) -> bool {
+        let ray = self.global_to_local_ray(&ray);
 
-        let coef = -ray.origin()[2] / ray.vector()[2];
+        let coef = -ray.origin().z / ray.vector().z;
         *impact = self.local_to_global_point(
-            ray.origin() + ray.vector() * coef
+            &(ray.origin() + ray.vector() * coef)
         );
 
         coef > 0.0
     }
 
-    fn normal(&self, at: &Vector<f32>, observer: &Vector<f32>) -> Ray {
-        let local_obs = self.global_to_local_point(observer.clone());
+    fn normal(&self, at: &Point, observer: &Point) -> Ray {
+        let local_obs = self.global_to_local_point(observer);
 
         self.local_to_global_ray(
-            Ray::new(
-                at[0], at[1], at[2],
-                0.0, 0.0, local_obs[2]
-            )
+            &Ray::new(*at, Point::new(0.0, 0.0, local_obs.z))
         ).normalized()
     }
 
-    fn material_at(&self, impact: &Vector<f32>) -> Material {
-        let local = self.global_to_local_point(impact.clone());
+    fn material_at(&self, impact: &Point) -> Material {
+        let local = self.global_to_local_point(impact);
 
-        let x = (if local[0] > 0.0 { 0.0 } else { 1.0 } + local[0] % 1.0).abs();
-        let y = (if local[1] < 0.0 { 0.0 } else { 1.0 } - local[1] % 1.0).abs();
+        let x = (if local.x > 0.0 { 0.0 } else { 1.0 } + local.x % 1.0).abs();
+        let y = (if local.y < 0.0 { 0.0 } else { 1.0 } - local.y % 1.0).abs();
 
         self.mat.material(x, y)
     }
 
-    fn outter_normal(&self, impact: &Vector<f32>) -> Vector<f32> {
-        let observer = Vector::new(vec![0.0, 0.0, 1.0, 1.0]);
-        let (_origin, vector) = self.normal(impact, &self.local_to_global_point(observer)).consume();
+    fn outter_normal(&self, impact: &Point) -> Point {
+        let observer = Point::new(0.0, 0.0, 1.0);
+        let (_origin, vector) = self.normal(impact, &self.local_to_global_point(&observer)).consume();
         vector
     }
 

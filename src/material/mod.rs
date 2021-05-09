@@ -4,7 +4,7 @@ pub mod simple_mat;
 pub mod grid_mat;
 pub mod texture;
 
-use std::ops::{Mul, Add, AddAssign};
+use std::ops::{Mul, Add, AddAssign, Sub};
 
 pub trait MatProvider {
     fn material(&self, x: f32, y: f32) -> Material;
@@ -80,6 +80,18 @@ impl AddAssign for Color {
         self.red = self.red.saturating_add(rhs.red);
         self.green = self.green.saturating_add(rhs.green);
         self.blue = self.blue.saturating_add(rhs.blue);
+    }
+}
+
+impl Sub for Color {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self {
+            red: self.red.saturating_sub(rhs.red),
+            green: self.green.saturating_sub(rhs.green),
+            blue: self.blue.saturating_sub(rhs.blue),
+        }
     }
 }
 
