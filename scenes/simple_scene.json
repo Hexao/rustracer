@@ -127,7 +127,7 @@
         },{
             "type": "POINT",
             "color": {
-                "diffuse": [191, 0, 0],
+                "diffuse": [102, 0, 0],
                 "specular": 0
             },
             "transform": [2.5, 0, 15]

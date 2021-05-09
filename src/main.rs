@@ -29,6 +29,8 @@ use serde_json::{Map, Value};
 use std::fmt::Display;
 
 fn main() {
+    // TODO: fix hcoord norm :grimacing:
+
     let path = match std::env::args().nth(1) {
         Some(path) => path,
         None => {
