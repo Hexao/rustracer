@@ -10,7 +10,7 @@ pub trait MatProvider {
     fn material(&self, x: f32, y: f32) -> Material;
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Color {
     pub red: u8,
     pub green: u8,

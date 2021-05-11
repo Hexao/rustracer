@@ -16,11 +16,11 @@ impl HCoord {
         Self { x, y, z, w }
     }
 
-    pub fn into_vec(&self) -> Point {
+    pub fn into_vec(self) -> Point {
         Point { x: self.x, y: self.y, z: self.z }
     }
 
-    pub fn into_pt(&self) -> Point {
+    pub fn into_pt(self) -> Point {
         Point { x: self.x / self.w, y: self.y / self.w, z: self.z / self.w }
     }
 }

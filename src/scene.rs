@@ -50,7 +50,7 @@ impl Scene {
         self.lights.push(light);
     }
 
-    pub fn closer(&self, ray: &Ray, impact: &mut Point) -> Option<&Box<dyn Object>> {
+    pub fn closer(&self, ray: &Ray, impact: &mut Point) -> Option<&dyn Object> {
         let mut hit = None;
         let mut dist = f32::INFINITY;
 
@@ -58,12 +58,12 @@ impl Scene {
             let mut new_impact = Point::default();
 
             if obj.intersect(&ray, &mut new_impact) {
-                let new_dist = (&new_impact - ray.origin()).norm();
+                let new_dist = (new_impact - ray.origin()).norm();
 
                 if new_dist < dist {
                     *impact = new_impact;
                     dist = new_dist;
-                    hit = Some(obj);
+                    hit = Some(obj.as_ref());
                 }
             }
         }
@@ -71,13 +71,18 @@ impl Scene {
         hit
     }
 
-    pub fn light_filter(&self, point: &Point, light: &Box<dyn Light>) -> Color {
+    pub fn light_filter(&self, point: &Point, light: &dyn Light, depth: usize) -> Color {
         let (mut origin, vector) = light.ray_to_light(point).consume();
         origin = origin + vector * 0.01;
 
         let ray = Ray::new(origin, vector);
         let mut impact = Point::default();
         let object = self.closer(&ray, &mut impact);
+
+        if point == &impact {
+            println!("recursive spot at depth {}", depth);
+            return Color::new_gray(255);
+        }
 
         match object {
             None => Color::new_gray(255),
@@ -88,11 +93,11 @@ impl Scene {
                 if dist_light > dist_object {
                     let material = object.material_at(&impact);
                     let alpha_coef = material.alpha as f32 / 255.0;
-                    let shadow = (Color::new_gray(255) * (1.0 - alpha_coef)) -
+                    let shadow = Color::new_gray(255) * (1.0 - alpha_coef) -
                         (Color::new_gray(255) - material.diffuse) * alpha_coef;
-                    
+
                     let sqrt2 = 2.0f32.sqrt();
-                    (shadow * sqrt2) * (self.light_filter(&impact, light) * sqrt2)
+                    (shadow * sqrt2) * (self.light_filter(&impact, light, depth + 1) * sqrt2)
                 } else {
                     Color::new_gray(255)
                 }

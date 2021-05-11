@@ -6,7 +6,6 @@ use crate::scene::Scene;
 
 use rulinalg::matrix::Matrix;
 use std::sync::Arc;
-use crossbeam;
 
 pub enum Focal {
     Perspective(f32),
@@ -51,7 +50,7 @@ impl Camera {
         let mut buf = Vec::with_capacity(self.x * self.y);
         let arc_self = Arc::from(self);
         let scene = Arc::from(scene);
-    
+
         let start = std::time::Instant::now();
         println!("render scene...");
 
@@ -66,56 +65,67 @@ impl Camera {
                 let scene = scene.clone();
                 let arc_self = arc_self.clone();
 
-                threads.push(scope.spawn(move |_| {
-                    let offsets = [(-0.25, -0.25), (0.25, -0.25), (-0.25, 0.25), (0.25, 0.25)];
-                    let mut buf = Vec::with_capacity(step * arc_self.x);
+                threads.push(if arc_self.flags & Camera::ANTI_ALIASING != 0 {
+                    scope.spawn(move |_| {
+                        let offsets = [(-0.25, -0.25), (0.25, -0.25), (-0.25, 0.25), (0.25, 0.25)];
+                        let mut buf = Vec::with_capacity(step * arc_self.x);
 
-                    for y in start_row..stop_row {
-                        if y >= arc_self.y {
-                            break;
+                        for y in start_row..stop_row.min(arc_self.y) {
+                            for x in 0..arc_self.x {
+                                buf.push({
+                                    let mut sr = 0;
+                                    let mut sg = 0;
+                                    let mut sb = 0;
+
+                                    for (ox, oy) in &offsets {
+                                        let ray = arc_self.local_to_global_ray(&arc_self.get_ray(x as f32 + ox, y as f32 + oy));
+                                        let mut impact = Point::default();
+
+                                        let Color { red, green, blue } = match scene.closer(&ray, &mut impact) {
+                                            Some(object) => self.impact_color(&ray, object, &impact, &scene, depth),
+                                            None => scene.background(),
+                                        };
+
+                                        sr += red as u16;
+                                        sg += green as u16;
+                                        sb += blue as u16;
+                                    }
+
+                                    Color::new((sr / 4) as u8, (sg / 4) as u8, (sb / 4) as u8)
+                                });
+                            }
                         }
 
-                        for x in 0..arc_self.x {
-                            buf.push(if arc_self.flags & Camera::ANTI_ALIASING != 0 {
-                                let mut sr = 0;
-                                let mut sg = 0;
-                                let mut sb = 0;
+                        buf
+                    })
+                } else {
+                    scope.spawn(move |_| {
+                        let mut buf = Vec::with_capacity(step * arc_self.x);
 
-                                for (ox, oy) in &offsets {
-                                    let ray = arc_self.local_to_global_ray(&arc_self.get_ray(x as f32 + ox, y as f32 + oy));
+                        for y in start_row..stop_row.min(arc_self.y) {
+                            for x in 0..arc_self.x {
+                                buf.push({
+                                    let ray = arc_self.local_to_global_ray(&arc_self.get_ray(x as f32, y as f32));
                                     let mut impact = Point::default();
 
-                                    let Color { red, green, blue } = match scene.closer(&ray, &mut impact) {
+                                    match scene.closer(&ray, &mut impact) {
                                         Some(object) => self.impact_color(&ray, object, &impact, &scene, depth),
                                         None => scene.background(),
-                                    };
-
-                                    sr += red as u16;
-                                    sg += green as u16;
-                                    sb += blue as u16;
-                                }
-
-                                Color::new((sr / 4) as u8, (sg / 4) as u8, (sb / 4) as u8)
-                            } else {
-                                let ray = arc_self.local_to_global_ray(&arc_self.get_ray(x as f32, y as f32));
-                                let mut impact = Point::default();
-
-                                match scene.closer(&ray, &mut impact) {
-                                    Some(object) => self.impact_color(&ray, object, &impact, &scene, depth),
-                                    None => scene.background(),
-                                }
-                            });
+                                    }
+                                });
+                            }
                         }
-                    }
 
-                    buf
-                }));
+                        buf
+                    })
+                });
             }
 
             for thread in threads {
                 let partial_data = thread.join().unwrap();
+
                 for pix in partial_data {
-                    buf.extend_from_slice(&mut pix.to_vec());
+                    buf.extend_from_slice(&pix.to_vec());
                 }
             }
         }).unwrap();
@@ -152,7 +162,7 @@ impl Camera {
         }
     }
 
-    fn impact_color(&self, ray: &Ray, object: &Box<dyn Object>, impact: &Point, scene: &Scene, depth: usize) -> Color {
+    fn impact_color(&self, ray: &Ray, object: &dyn Object, impact: &Point, scene: &Scene, depth: usize) -> Color {
         let mut specular = Color::default();
         let mut reflection = Color::default();
         let material = object.material_at(impact);
@@ -173,11 +183,11 @@ impl Camera {
             let shadow = if (self.flags & Camera::NO_SHADOW) != 0 {
                 Color::new_gray(255)
             } else {
-                scene.light_filter(impact, light)
+                scene.light_filter(impact, light.as_ref(), 0)
             };
 
             diffuse += material.diffuse * light.diffuse() * alpha * shadow;
-            specular += material.specular * (normal.vector() * 2.0 * alpha - vec_light).dot(&-ray.vector()).powf(material.shininess) * light.specular() * alpha;
+            specular += material.specular * (normal.vector() * 2.0 * alpha - vec_light).dot(&-ray.vector()).powf(material.shininess) * light.specular() * alpha * shadow;
         }
 
         if depth > 0 {

@@ -1,6 +1,6 @@
 use crate::math::h_coord::HCoord;
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Point {
     pub x: f32,
     pub y: f32,
@@ -12,11 +12,11 @@ impl Point {
         Self { x, y, z }
     }
 
-    pub fn into_vec4(&self) -> HCoord {
+    pub fn into_vec4(self) -> HCoord {
         HCoord::new(self.x, self.y, self.z, 0.0)
     }
 
-    pub fn into_pt4(&self) -> HCoord {
+    pub fn into_pt4(self) -> HCoord {
         HCoord::new(self.x, self.y, self.z, 1.0)
     }
 
