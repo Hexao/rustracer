@@ -6,7 +6,7 @@
                 "type": "SIMPLE",
                 "mat": {
                     "ambient": 80,
-                    "diffuse": 191,
+                    "diffuse": 250,
                     "specular": 0
                 }
             },
@@ -17,21 +17,21 @@
         {
             "type": "POINT",
             "color": {
-                "diffuse": [190, 0, 0],
+                "diffuse": [250, 0, 0],
                 "specular": 0
             },
             "transform": [0, 2.5, 1.5]
         },{
             "type": "POINT",
             "color": {
-                "diffuse": [0, 190, 0],
+                "diffuse": [0, 250, 0],
                 "specular": 0
             },
             "transform": [-2.15, -1.25, 1.5]
         },{
             "type": "POINT",
             "color": {
-                "diffuse": [0, 0, 190],
+                "diffuse": [0, 0, 250],
                 "specular": 0
             },
             "transform": [2.12, -1.25, 1.5]

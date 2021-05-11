@@ -38,11 +38,12 @@
                 "mat": {
                     "ambient": 0,
                     "diffuse": 0,
-                    "specular": 0,
-                    "alpha": 25
+                    "specular": 20,
+                    "shininess": 5,
+                    "alpha": 10
                 }
             },
-            "refraction": 2.75,
+            "refraction": 1.5,
             "transform": [-2.5, 0, 15]
         },{
             "type": "SPHERE",
@@ -103,11 +104,13 @@
                     {
                         "ambient": 85,
                         "diffuse": 191,
-                        "specular": 255
+                        "specular": 255,
+                        "reflection": 75
                     },{
                         "ambient": 0,
                         "diffuse": 65,
-                        "specular": 255
+                        "specular": 255,
+                        "reflection": 75
                     }
                 ]
             },
@@ -118,12 +121,12 @@
     ],
     "lights": [
         {
-            "type": "POINT",
+            "type": "DIRECTIONAL",
             "color": {
-                "diffuse": 191,
-                "specular": 255
+                "diffuse": 155,
+                "specular": [240, 220, 100]
             },
-            "transform": [2.5, 7.5, 0]
+            "rotate": [60, 15, 0]
         },{
             "type": "POINT",
             "color": {
@@ -147,7 +150,7 @@
     },
     "config": {
         "output": "render/simple_scene.png",
-        "threads": 8,
-        "depth": 5
+        "threads": 18,
+        "depth": 50
     }
 }
