@@ -1,3 +1,4 @@
+pub mod directional_light;
 pub mod point_light;
 
 use crate::material::Color;

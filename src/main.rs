@@ -4,7 +4,11 @@ mod scene;
 mod math;
 
 use object::{
-    light::{Light, point_light::PointLight},
+    light::{
+        directional_light::DirectionalLight,
+        point_light::PointLight,
+        Light,
+    },
     camera::{Camera, Focal},
     sphere::Sphere,
     plane::Plane,
@@ -286,7 +290,7 @@ fn parse_objects(scene: &mut Scene, json: &Map<String, Value>) -> Result<(), Mal
 
                         mat[mat_id] = Material::new(ambient, diffuse, specular, alpha, reflection, shininess);
                     }
-                    
+
                     let rep = match material.get("rep") {
                         None => 1,
                         Some(alpha) => match alpha.as_u64() {
@@ -352,7 +356,7 @@ fn parse_objects(scene: &mut Scene, json: &Map<String, Value>) -> Result<(), Mal
 
                         mat[mat_id] = Material::new(ambient, diffuse, specular, alpha, reflection, shininess);
                     }
-                    
+
                     let rep = match material.get("rep") {
                         None => 1,
                         Some(alpha) => match alpha.as_u64() {
@@ -418,7 +422,7 @@ fn parse_objects(scene: &mut Scene, json: &Map<String, Value>) -> Result<(), Mal
 
                         mat[mat_id] = Material::new(ambient, diffuse, specular, alpha, reflection, shininess);
                     }
-                    
+
                     let (rep_x, rep_y) = match material.get("rep") {
                         None => (
                             match material.get("repX") {
@@ -646,6 +650,7 @@ fn parse_lights(scene: &mut Scene, json: &Map<String, Value>) -> Result<(), Malf
 
             let mut scn_light: Box<dyn Light> = match lig_type {
                 "POINT" => Box::new(PointLight::new(diffuse, specular)),
+                "DIRECTIONAL" => Box::new(DirectionalLight::new(diffuse, specular)),
                 unknown => return Err(Malformed::Light(id, InnerError::UnknownType(unknown.to_owned()))),
             };
 
@@ -672,6 +677,34 @@ fn parse_lights(scene: &mut Scene, json: &Map<String, Value>) -> Result<(), Malf
                     scn_light.move_global(x, y, z);
                 } else {
                     return Err(Malformed::Light(id, InnerError::FieldArray("transform", "Float", 3)));
+                }
+            }
+
+            if let Some(rotate) = light.get("rotate") {
+                let rotate = match rotate.as_array() {
+                    None => return Err(Malformed::Light(id, InnerError::FieldArray("rotate", "Float", 3))),
+                    Some(rotate) => rotate,
+                };
+
+                if rotate.len() == 3 {
+                    let x = match rotate[0].as_f64() {
+                        None => return Err(Malformed::Light(id, InnerError::FieldArray("rotate", "Float", 3))),
+                        Some(x) => x as f32,
+                    };
+                    let y = match rotate[1].as_f64() {
+                        None => return Err(Malformed::Light(id, InnerError::FieldArray("rotate", "Float", 3))),
+                        Some(y) => y as f32,
+                    };
+                    let z = match rotate[2].as_f64() {
+                        None => return Err(Malformed::Light(id, InnerError::FieldArray("rotate", "Float", 3))),
+                        Some(z) => z as f32,
+                    };
+
+                    scn_light.rotate_x(x);
+                    scn_light.rotate_y(y);
+                    scn_light.rotate_z(z);
+                } else {
+                    return Err(Malformed::Light(id, InnerError::FieldArray("rotate", "Float", 3)));
                 }
             }
 
@@ -904,7 +937,7 @@ fn get_color(map: &Map<String, Value>, key: &'static str, field: &'static str) -
         Some(value) => value,
         None => return Err(InnerError::MissingField(field)),
     };
-    
+
     match value.as_u64() {
         Some(gray) => Ok(Color::new_gray(gray as u8)),
         None => match value.as_array() {
