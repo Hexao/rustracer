@@ -105,12 +105,12 @@
                         "ambient": 85,
                         "diffuse": 191,
                         "specular": 255,
-                        "reflection": 75
+                        "reflection": 40
                     },{
                         "ambient": 0,
-                        "diffuse": 65,
+                        "diffuse": 30,
                         "specular": 255,
-                        "reflection": 75
+                        "reflection": 40
                     }
                 ]
             },
@@ -151,6 +151,6 @@
     "config": {
         "output": "render/simple_scene.png",
         "threads": 18,
-        "depth": 50
+        "depth": 5
     }
 }
