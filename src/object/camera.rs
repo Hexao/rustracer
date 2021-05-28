@@ -4,6 +4,7 @@ use crate::material::Color;
 use crate::math::ray::Ray;
 use crate::scene::Scene;
 
+use serde::{Deserialize, Deserializer, de::{Visitor, Error, MapAccess}};
 use rulinalg::matrix::Matrix;
 use std::sync::Arc;
 
@@ -240,5 +241,128 @@ impl Movable for Camera {
 
     fn inv_mut(&mut self) -> &mut Matrix<f32> {
         &mut self.inv
+    }
+}
+
+impl<'de> Deserialize<'de> for Focal {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+        const FOCAL: &[&str] = &["PERSPECTIVE", "ORTHOGRAPHIC"];
+        const FIELDS: &[&str] = &["type", "size"];
+        struct FocalVisitor;
+
+        impl<'de> Visitor<'de> for FocalVisitor {
+            type Value = Focal;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("Focal struct")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error> where A: MapAccess<'de> {
+                let mut focal_type = None;
+                let mut size = None;
+
+                while let Some(field) = map.next_key()? {
+                    match field {
+                        "type" => focal_type = Some(map.next_value()?),
+                        "size" => size = Some(map.next_value()?),
+                        _ => return Err(Error::unknown_field(field, FIELDS)),
+                    }
+                }
+
+                let focal_type = focal_type.ok_or_else(|| Error::missing_field("type"))?;
+
+                match focal_type {
+                    "PERSPECTIVE" => {
+                        let size = size.unwrap_or(1.7);
+                        Ok(Focal::Perspective(size))
+                    }
+                    "ORTHOGRAPHIC" => {
+                        let size = size.unwrap_or(1.0);
+                        Ok(Focal::Orthographic(size))
+                    }
+                    _ => return Err(Error::unknown_variant(focal_type, FOCAL)),
+                }
+            }
+        }
+
+        deserializer.deserialize_map(FocalVisitor)
+    }
+}
+
+impl<'de> Deserialize<'de> for Camera {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+        const FIELDS: &[&str] = &["size", "focal", "flags", "transform", "rotate", "scale"];
+        const FLAGS: &[&str] = &["ANTI_ALIASING", "NO_SHADOW"];
+        struct CameraVisitor;
+
+        impl<'de> Visitor<'de> for CameraVisitor {
+            type Value = Camera;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("Camera struct")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error> where A: MapAccess<'de> {
+                let mut size: Option<[usize; 2]> = None;
+                let mut focal = None;
+                let mut flags: Option<Vec<&str>> = None;
+                let mut transform: Option<[f32; 3]> = None;
+                let mut rotate: Option<[f32; 3]> = None;
+                let mut scale = None;
+
+                while let Some(field) = map.next_key()? {
+                    match field {
+                        "size" => size = Some(map.next_value()?),
+                        "focal" => focal = Some(map.next_value()?),
+                        "flags" => flags = Some(map.next_value()?),
+                        "transform" => transform = Some(map.next_value()?),
+                        "rotate" => rotate = Some(map.next_value()?),
+                        "scale" => scale = Some(map.next_value()?),
+                        _ => return Err(Error::unknown_field(field, FIELDS)),
+                    }
+                }
+
+                let [x, y] = size.unwrap_or([1920, 1080]);
+                let focal = focal.unwrap_or(Focal::Perspective(1.7));
+
+                let flags = match flags {
+                    None => 0,
+                    Some(flags) => {
+                        let mut flag = 0;
+
+                        for entree in flags {
+                            match entree {
+                                "ANTI_ALIASING" => flag |= Camera::ANTI_ALIASING,
+                                "NO_SHADOW" => flag |= Camera::NO_SHADOW,
+                                _ => return Err(Error::unknown_variant(entree, FLAGS)),
+                            }
+                        }
+
+                        flag
+                    }
+                };
+
+                let mut camera = Camera::new(x, y, focal);
+                camera.set_flags(flags);
+
+                if let Some([x, y, z]) = transform {
+                    camera.move_global(x, y, z);
+                }
+
+                if let Some([rx, ry, rz]) = rotate {
+                    camera.rotate_x(rx);
+                    camera.rotate_y(ry);
+                    camera.rotate_z(rz);
+                }
+
+                if let Some(scale) = scale {
+                    camera.scale(scale);
+                }
+
+                Ok(camera)
+            }
+        }
+
+        deserializer.deserialize_map(CameraVisitor)
     }
 }

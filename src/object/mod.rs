@@ -9,6 +9,7 @@ use crate::math::{
     ray::Ray
 };
 
+use serde::{Deserialize, Deserializer, de::{Visitor, Error, MapAccess}};
 use rulinalg::matrix::Matrix;
 
 pub trait Movable {
@@ -159,5 +160,70 @@ pub trait Object: Movable {
 
         let gap = 0.0005;
         Ray::new(impact + refracted * gap, refracted)
+    }
+}
+
+impl<'de> Deserialize<'de> for Box<dyn Object> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+        const FIELDS: &[&str] = &["type", "material", "refraction", "transform", "rotate", "scale"];
+        const TYPES: &[&str] = &["SPHERE", "PLANE"];
+        struct ObjectVisitor;
+
+        impl<'de> Visitor<'de> for ObjectVisitor {
+            type Value = Box<dyn Object>;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("Object struct")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error> where A: MapAccess<'de> {
+                let mut obj_type = None;
+                let mut material = None;
+                let mut refraction = None;
+                let mut transform: Option<[f32; 3]> = None;
+                let mut rotate: Option<[f32; 3]> = None;
+                let mut scale = None;
+
+                while let Some(field) = map.next_key()? {
+                    match field {
+                        "type" => obj_type = Some(map.next_value()?),
+                        "material" => material = Some(map.next_value()?),
+                        "refraction" => refraction = Some(map.next_value()?),
+                        "transform" => transform = Some(map.next_value()?),
+                        "rotate" => rotate = Some(map.next_value()?),
+                        "scale" => scale = Some(map.next_value()?),
+                        _ => return Err(Error::unknown_field(field, FIELDS)),
+                    }
+                }
+
+                let obj_type = obj_type.ok_or_else(|| Error::missing_field("type"))?;
+                let material = material.ok_or_else(|| Error::missing_field("material"))?;
+                let coef_refraction = refraction.unwrap_or(1.0);
+
+                let mut object: Box<dyn Object> = match obj_type {
+                    "SPHERE" => Box::new(sphere::Sphere::new(material, coef_refraction)),
+                    "PLANE" => Box::new(plane::Plane::new(material, coef_refraction)),
+                    _ => return Err(Error::unknown_variant(obj_type, TYPES)),
+                };
+
+                if let Some([x, y, z]) = transform {
+                    object.move_global(x, y, z);
+                }
+
+                if let Some([x, y, z]) = rotate {
+                    object.rotate_x(x);
+                    object.rotate_y(y);
+                    object.rotate_z(z);
+                }
+
+                if let Some(scale) = scale {
+                    object.scale(scale);
+                }
+
+                Ok(object)
+            }
+        }
+
+        deserializer.deserialize_map(ObjectVisitor)
     }
 }

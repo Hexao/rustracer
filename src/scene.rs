@@ -17,21 +17,8 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn new() -> Self {
-        Scene {
-            objects: Vec::default(),
-            lights: Vec::default(),
-            background: Color::SKY,
-            ambient: Color::new_gray(127),
-        }
-    }
-
-    pub fn new_custom(background: Color, ambient: Color) -> Self {
-        Scene {
-            objects: Vec::default(),
-            lights: Vec::default(),
-            background, ambient
-        }
+    pub fn new(objects: Vec<Box<dyn Object>>, lights: Vec<Box<dyn Light>>, background: Color, ambient: Color) -> Self {
+        Scene { objects, lights, background, ambient }
     }
 
     pub fn background(&self) -> Color {
@@ -40,14 +27,6 @@ impl Scene {
 
     pub fn ambient(&self) -> Color {
         self.ambient
-    }
-
-    pub fn add_object(&mut self, object: Box<dyn Object>) {
-        self.objects.push(object);
-    }
-
-    pub fn add_light(&mut self, light: Box<dyn Light>) {
-        self.lights.push(light);
     }
 
     pub fn closer(&self, ray: &Ray, impact: &mut Point) -> Option<&dyn Object> {
@@ -96,8 +75,8 @@ impl Scene {
                     let shadow = Color::new_gray(255) * (1.0 - alpha_coef) -
                         (Color::new_gray(255) - material.diffuse) * alpha_coef;
 
-                    let sqrt2 = 2.0f32.sqrt();
-                    (shadow * sqrt2) * (self.light_filter(&impact, light, depth + 1) * sqrt2)
+                    use std::f32::consts::SQRT_2;
+                    (shadow * SQRT_2) * (self.light_filter(&impact, light, depth + 1) * SQRT_2)
                 } else {
                     Color::new_gray(255)
                 }
