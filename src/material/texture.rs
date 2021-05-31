@@ -1,7 +1,7 @@
-use image::{DynamicImage, GenericImageView, io::Reader};
-
 use crate::material::{MatProvider, Material, Color};
 
+use serde::{Deserialize, Deserializer, de::{Visitor, Error, MapAccess}};
+use image::{DynamicImage, GenericImageView, io::Reader};
 
 pub struct Texture {
     image: DynamicImage,
@@ -41,5 +41,54 @@ impl MatProvider for Texture {
             self.reflection,
             self.shininess
         )
+    }
+}
+
+impl<'de> Deserialize<'de> for Texture {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+        const FIELDS: &[&str] = &["resource", "rep[X|Y]", "reflection", "shininess"];
+        struct TextureVisitor;
+
+        impl<'de> Visitor<'de> for TextureVisitor {
+            type Value = Texture;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("Texture struct")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error> where A: MapAccess<'de>, {
+                let mut file = None;
+                let mut rep_x = None;
+                let mut rep_y = None;
+                let mut shininess = None;
+                let mut reflection = None;
+
+                while let Some(field) = map.next_key()? {
+                    match field {
+                        "rep" => {
+                            let [x, y]: [usize; 2] = map.next_value()?;
+                            rep_x = Some(x);
+                            rep_y = Some(y);
+                        }
+                        "repX" => rep_x = Some(map.next_value()?),
+                        "repY" => rep_y = Some(map.next_value()?),
+                        "resource" => file = Some(map.next_value()?),
+                        "shininess" => shininess = Some(map.next_value()?),
+                        "reflection" => reflection = Some(map.next_value()?),
+                        _ => return Err(Error::unknown_field(field, FIELDS))
+                    }
+                }
+
+                let file_name = file.ok_or_else(|| Error::missing_field("resource"))?;
+                let reflection = reflection.unwrap_or(0);
+                let shininess = shininess.unwrap_or(50.0);
+                let rep_x = rep_x.unwrap_or(1);
+                let rep_y = rep_y.unwrap_or(1);
+
+                Ok(Texture::new(file_name, rep_x, rep_y, reflection, shininess))
+            }
+        }
+
+        deserializer.deserialize_map(TextureVisitor)
     }
 }
