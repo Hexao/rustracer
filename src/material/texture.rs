@@ -13,8 +13,12 @@ pub struct Texture {
 
 impl Texture {
     pub fn new(file_name: &str, rep_x: usize, rep_y: usize, reflection: u8, shininess: f32) -> Self {
-        let image = Reader::open(file_name).unwrap().decode().unwrap();
         assert!(rep_x > 0 && rep_y > 0);
+
+        let image = match Reader::open(file_name) {
+            Ok(image) => image.decode().unwrap(),
+            Err(e) => panic!("{}: {}", file_name, e),
+        };
 
         Self { image, rep_x: rep_x as f32, rep_y: rep_y as f32, reflection, shininess }
     }
