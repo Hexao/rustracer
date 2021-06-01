@@ -181,8 +181,8 @@ impl<'de> Deserialize<'de> for Box<dyn Object> {
                 let mut obj_type = None;
                 let mut material = None;
                 let mut refraction = None;
-                let mut transform: Option<[f32; 3]> = None;
-                let mut rotate: Option<[f32; 3]> = None;
+                let mut transform = None;
+                let mut rotate = None;
                 let mut scale = None;
 
                 while let Some(field) = map.next_key()? {
@@ -208,11 +208,11 @@ impl<'de> Deserialize<'de> for Box<dyn Object> {
                     _ => return Err(Error::unknown_variant(obj_type, TYPES)),
                 };
 
-                if let Some([x, y, z]) = transform {
+                if let Some(Point {x, y , z}) = transform {
                     object.move_global(x, y, z);
                 }
 
-                if let Some([x, y, z]) = rotate {
+                if let Some(Point {x, y , z}) = rotate {
                     object.rotate_x(x);
                     object.rotate_y(y);
                     object.rotate_z(z);

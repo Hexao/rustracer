@@ -57,7 +57,7 @@
                     "shininess": 75
                 }
             },
-            "transform": [0, 0, 15]
+            "transform": { "z": 15 }
         },{
             "type": "SPHERE",
             "material": {
@@ -65,8 +65,7 @@
                 "rep": [6, 3],
                 "resource": "texture/pito.png"
             },
-            "transform": [2.5, 0, 15],
-            "rotate": [0, 0, 0]
+            "transform": [2.5, 0, 15]
         },{
             "type": "SQUARE",
             "material": {
@@ -78,7 +77,7 @@
                 }
             },
             "transform": [5, 0, 15],
-            "rotate": [0, 45, 0]
+            "rotate": { "y": 45 }
         },{
             "type": "SPHERE",
             "material": {
@@ -115,8 +114,8 @@
                     }
                 ]
             },
-            "transform": [0, -1, 0],
-            "rotate": [90, 0, 0],
+            "transform": { "y": -1 },
+            "rotate": { "x": 90 },
             "scale": 2.5
         }
     ],
@@ -146,8 +145,8 @@
         "flags": [
             "ANTI_ALIASING"
         ],
-        "transform": [0, 3, 0],
-        "rotate": [7, 0, 0]
+        "transform": { "y": 3 },
+        "rotate": { "x": 7 }
     },
     "config": {
         "output": "render/simple_scene.png",

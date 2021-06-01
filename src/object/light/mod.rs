@@ -98,8 +98,8 @@ impl<'de> Deserialize<'de> for Box<dyn Light> {
 
                 let mut light_type = None;
                 let mut color = None;
-                let mut transform: Option<[f32; 3]> = None;
-                let mut rotate: Option<[f32; 3]> = None;
+                let mut transform = None;
+                let mut rotate = None;
                 let mut scale = None;
 
                 while let Some(field) = map.next_key()? {
@@ -122,11 +122,11 @@ impl<'de> Deserialize<'de> for Box<dyn Light> {
                     _ => return Err(Error::unknown_variant(light_type, TYPES)),
                 };
 
-                if let Some([x, y, z]) = transform {
+                if let Some(Point {x, y , z}) = transform {
                     light.move_global(x, y, z);
                 }
 
-                if let Some([x, y, z]) = rotate {
+                if let Some(Point {x, y , z}) = rotate {
                     light.rotate_x(x);
                     light.rotate_y(y);
                     light.rotate_z(z);

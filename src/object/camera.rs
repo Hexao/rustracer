@@ -306,8 +306,8 @@ impl<'de> Deserialize<'de> for Camera {
                 let mut size: Option<[usize; 2]> = None;
                 let mut focal = None;
                 let mut flags: Option<Vec<&str>> = None;
-                let mut transform: Option<[f32; 3]> = None;
-                let mut rotate: Option<[f32; 3]> = None;
+                let mut transform = None;
+                let mut rotate = None;
                 let mut scale = None;
 
                 while let Some(field) = map.next_key()? {
@@ -345,14 +345,14 @@ impl<'de> Deserialize<'de> for Camera {
                 let mut camera = Camera::new(x, y, focal);
                 camera.set_flags(flags);
 
-                if let Some([x, y, z]) = transform {
+                if let Some(Point {x, y , z}) = transform {
                     camera.move_global(x, y, z);
                 }
 
-                if let Some([rx, ry, rz]) = rotate {
-                    camera.rotate_x(rx);
-                    camera.rotate_y(ry);
-                    camera.rotate_z(rz);
+                if let Some(Point {x, y , z}) = rotate {
+                    camera.rotate_x(x);
+                    camera.rotate_y(y);
+                    camera.rotate_z(z);
                 }
 
                 if let Some(scale) = scale {
