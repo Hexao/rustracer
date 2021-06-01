@@ -1,5 +1,6 @@
 pub mod sphere;
 pub mod camera;
+pub mod square;
 pub mod plane;
 pub mod light;
 
@@ -166,7 +167,7 @@ pub trait Object: Movable {
 impl<'de> Deserialize<'de> for Box<dyn Object> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
         const FIELDS: &[&str] = &["type", "material", "refraction", "transform", "rotate", "scale"];
-        const TYPES: &[&str] = &["SPHERE", "PLANE"];
+        const TYPES: &[&str] = &["SPHERE", "PLANE", "SQUARE"];
         struct ObjectVisitor;
 
         impl<'de> Visitor<'de> for ObjectVisitor {
@@ -203,6 +204,7 @@ impl<'de> Deserialize<'de> for Box<dyn Object> {
                 let mut object: Box<dyn Object> = match obj_type {
                     "SPHERE" => Box::new(sphere::Sphere::new(material, coef_refraction)),
                     "PLANE" => Box::new(plane::Plane::new(material, coef_refraction)),
+                    "SQUARE" => Box::new(square::Square::new(material, coef_refraction)),
                     _ => return Err(Error::unknown_variant(obj_type, TYPES)),
                 };
 

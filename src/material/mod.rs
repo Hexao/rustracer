@@ -13,6 +13,7 @@ pub trait MatProvider {
 
 impl<'de> Deserialize<'de> for Box<dyn MatProvider> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+        const TYPES: &[&str] = &["SIMPLE", "STRIP_X", "STRIP_Y", "GRID", "TEXTURE"];
         struct MatVisitor;
 
         impl<'de> Visitor<'de> for MatVisitor {
@@ -54,7 +55,7 @@ impl<'de> Deserialize<'de> for Box<dyn MatProvider> {
                                 let boxed: Box<dyn MatProvider> = Box::new(texture);
                                 Ok(boxed)
                             }
-                            unknown => Err(Error::invalid_value(Unexpected::Str(unknown), &"`SIMPLE`, `STRIP_X`, `STRIP_Y`, `GRID` or `TEXTURE`"))
+                            _ => Err(Error::unknown_variant(value, TYPES)),
                         }
                     }
                     _ => Err(Error::custom("Expected `type` key as first")),

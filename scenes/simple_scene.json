@@ -40,10 +40,10 @@
                     "diffuse": 0,
                     "specular": 20,
                     "shininess": 5,
-                    "alpha": 10
+                    "alpha": 15
                 }
             },
-            "refraction": 1.5,
+            "refraction": 1.007,
             "transform": [-2.5, 0, 15]
         },{
             "type": "SPHERE",
@@ -68,7 +68,7 @@
             "transform": [2.5, 0, 15],
             "rotate": [0, 0, 0]
         },{
-            "type": "SPHERE",
+            "type": "SQUARE",
             "material": {
                 "type": "SIMPLE",
                 "mat": {
@@ -77,7 +77,8 @@
                     "specular": [120, 255, 120]
                 }
             },
-            "transform": [5, 0, 15]
+            "transform": [5, 0, 15],
+            "rotate": [0, 45, 0]
         },{
             "type": "SPHERE",
             "material": {
@@ -114,7 +115,7 @@
                     }
                 ]
             },
-            "transform": [0, -1, 15],
+            "transform": [0, -1, 0],
             "rotate": [90, 0, 0],
             "scale": 2.5
         }
