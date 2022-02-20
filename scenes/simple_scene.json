@@ -73,7 +73,8 @@
                 "mat": {
                     "ambient": [0, 85, 0],
                     "diffuse": [0, 191, 0],
-                    "specular": [120, 255, 120]
+                    "specular": [120, 255, 120],
+                    "reflection": 75
                 }
             },
             "transform": [5, 0, 15],

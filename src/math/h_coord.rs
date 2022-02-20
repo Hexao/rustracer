@@ -25,8 +25,8 @@ impl HCoord {
     }
 }
 
-
-impl<T> Mul<HCoord> for &Matrix<T> where T: Mul<f32, Output = f32> + Add<f32, Output = f32> + Copy {
+impl<T> Mul<HCoord> for &Matrix<T>
+where T: Mul<f32, Output = f32> + Add<f32, Output = f32> + Copy {
     type Output = HCoord;
 
     fn mul(self, rhs: HCoord) -> Self::Output {

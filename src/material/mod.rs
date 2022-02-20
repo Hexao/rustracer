@@ -85,7 +85,7 @@ impl Color {
         Self { red: gray, green: gray, blue: gray }
     }
 
-    pub fn to_vec(&self) -> [u8; 3] {
+    pub fn to_array(self) -> [u8; 3] {
         [self.red, self.green, self.blue]
     }
 }

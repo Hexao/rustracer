@@ -107,7 +107,7 @@ impl<'de> Deserialize<'de> for Parser {
                                 }
 
                                 let backbround = backgroung.unwrap_or(Color::SKY);
-                                let ambient = ambient.unwrap_or(Color::new_gray(120));
+                                let ambient = ambient.unwrap_or_else(|| Color::new_gray(120));
                                 Ok(SceneColor(backbround, ambient))
                             }
                         }
@@ -133,15 +133,15 @@ impl<'de> Deserialize<'de> for Parser {
                     }
                 }
 
-                let objects = objects.unwrap_or(Vec::default());
-                let lights = lights.unwrap_or(Vec::default());
-                let SceneColor(background, ambient) = colors.unwrap_or(
-                    SceneColor(Color::SKY, Color::new_gray(120))
+                let objects = objects.unwrap_or_default();
+                let lights = lights.unwrap_or_default();
+                let SceneColor(background, ambient) = colors.unwrap_or_else(
+                    || SceneColor(Color::SKY, Color::new_gray(120))
                 );
 
                 let scene = Scene::new(objects, lights, background, ambient);
-                let camera = camera.unwrap_or(Camera::new(1920, 1080, Focal::Perspective(1.7)));
-                let config = config.unwrap_or(Config::default());
+                let camera = camera.unwrap_or_else(|| Camera::new(1920, 1080, Focal::Perspective(1.7)));
+                let config = config.unwrap_or_default();
 
                 Ok(Self::Value { scene, camera, config })
             }

@@ -75,8 +75,6 @@ impl Add<&Point> for Point {
     }
 }
 
-
-
 impl Sub for Point {
     type Output = Point;
 

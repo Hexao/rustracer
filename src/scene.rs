@@ -36,7 +36,7 @@ impl Scene {
         for obj in self.objects.iter() {
             let mut new_impact = Point::default();
 
-            if obj.intersect(&ray, &mut new_impact) {
+            if obj.intersect(ray, &mut new_impact) {
                 let new_dist = (new_impact - ray.origin()).norm();
 
                 if new_dist < dist {

@@ -48,7 +48,7 @@ impl Camera {
      * **file_name** Target file
      */
     pub fn render_in(&self, scene: &Scene, file_name: &str, depth: usize, thread_count: usize) {
-        let mut buf = Vec::with_capacity(self.x * self.y);
+        let mut buf = Vec::with_capacity(self.x * self.y * 3);
         let arc_self = Arc::from(self);
         let scene = Arc::from(scene);
 
@@ -56,8 +56,9 @@ impl Camera {
         println!("render scene...");
 
         crossbeam::scope(|scope| {
+            let mod_zero = (arc_self.y % thread_count).min(1);
+            let step = arc_self.y / thread_count + mod_zero;
             let mut threads = vec![];
-            let step = arc_self.y / thread_count + 1;
 
             for thread_id in 0..thread_count {
                 let start_row = thread_id * step;
@@ -67,19 +68,19 @@ impl Camera {
                 let arc_self = arc_self.clone();
 
                 threads.push(if arc_self.flags & Camera::ANTI_ALIASING != 0 {
-                    scope.spawn(move |_| {
+                    scope.spawn(move |_scope| {
                         let offsets = [(-0.25, -0.25), (0.25, -0.25), (-0.25, 0.25), (0.25, 0.25)];
                         let mut buf = Vec::with_capacity(step * arc_self.x);
 
-                        for y in start_row..stop_row.min(arc_self.y) {
-                            for x in 0..arc_self.x {
+                        for y in (start_row..stop_row.min(arc_self.y)).map(|y| y as f32) {
+                            for x in (0..arc_self.x).map(|x| x as f32) {
                                 buf.push({
                                     let mut sr = 0;
                                     let mut sg = 0;
                                     let mut sb = 0;
 
                                     for (ox, oy) in &offsets {
-                                        let ray = arc_self.local_to_global_ray(&arc_self.get_ray(x as f32 + ox, y as f32 + oy));
+                                        let ray = arc_self.local_to_global_ray(&arc_self.get_ray(x + ox, y + oy));
                                         let mut impact = Point::default();
 
                                         let Color { red, green, blue } = match scene.closer(&ray, &mut impact) {
@@ -100,13 +101,13 @@ impl Camera {
                         buf
                     })
                 } else {
-                    scope.spawn(move |_| {
+                    scope.spawn(move |_scope| {
                         let mut buf = Vec::with_capacity(step * arc_self.x);
 
-                        for y in start_row..stop_row.min(arc_self.y) {
-                            for x in 0..arc_self.x {
+                        for y in (start_row..stop_row.min(arc_self.y)).map(|y| y as f32) {
+                            for x in (0..arc_self.x).map(|x| x as f32) {
                                 buf.push({
-                                    let ray = arc_self.local_to_global_ray(&arc_self.get_ray(x as f32, y as f32));
+                                    let ray = arc_self.local_to_global_ray(&arc_self.get_ray(x, y));
                                     let mut impact = Point::default();
 
                                     match scene.closer(&ray, &mut impact) {
@@ -126,24 +127,24 @@ impl Camera {
                 let partial_data = thread.join().unwrap();
 
                 for pix in partial_data {
-                    buf.extend_from_slice(&pix.to_vec());
+                    buf.extend(pix.to_array());
                 }
             }
         }).unwrap();
 
-        let dur = start.elapsed().as_secs_f64();
+        let dur = start.elapsed().as_secs_f32();
         println!("scene rendered in {:.2} sec!", dur);
 
         std::fs::create_dir_all(std::path::Path::new(file_name).parent().unwrap()).unwrap();
-        image::save_buffer(file_name, buf.as_slice(), self.x as u32, self.y as u32, image::ColorType::RGB(8)).unwrap();
+        image::save_buffer(file_name, buf.as_slice(), self.x as u32, self.y as u32, image::ColorType::Rgb8).unwrap();
     }
 
     fn get_ray(&self, x: f32, y: f32) -> Ray {
         match self.focal {
             Focal::Perspective(focal) => {
-                let size = self.x.min(self.y);
-                let px =  (x - self.x as f32 / 2.0) / size as f32;
-                let py = -(y - self.y as f32 / 2.0) / size as f32;
+                let size = self.x.min(self.y) as f32;
+                let px =  (x - self.x as f32 / 2.0) / size;
+                let py = -(y - self.y as f32 / 2.0) / size;
 
                 let origin = Point::new(px, py, 0.0);
                 let vector = Point::new(px, py, focal);
@@ -158,7 +159,7 @@ impl Camera {
                 let origin = Point::new(px, py, 0.0);
                 let vector = Point::new(0.0, 0.0, 1.0);
 
-                Ray::new(origin, vector)
+                Ray::new(origin, vector).normalized()
             }
         }
     }
@@ -280,7 +281,7 @@ impl<'de> Deserialize<'de> for Focal {
                         let size = size.unwrap_or(1.0);
                         Ok(Focal::Orthographic(size))
                     }
-                    _ => return Err(Error::unknown_variant(focal_type, FOCAL)),
+                    _ => Err(Error::unknown_variant(focal_type, FOCAL)),
                 }
             }
         }
