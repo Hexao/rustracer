@@ -50,6 +50,6 @@
     },
     "config": {
         "output": "render/beautiful.png",
-        "threads": 8
+        "threads": 16
     }
 }

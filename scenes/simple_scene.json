@@ -151,7 +151,7 @@
     },
     "config": {
         "output": "render/simple_scene.png",
-        "threads": 18,
+        "threads": 16,
         "depth": 5
     }
 }

@@ -6,7 +6,6 @@ use crate::scene::Scene;
 
 use serde::{Deserialize, Deserializer, de::{Visitor, Error, MapAccess}};
 use rulinalg::matrix::Matrix;
-use std::sync::Arc;
 
 pub enum Focal {
     Perspective(f32),
@@ -49,51 +48,40 @@ impl Camera {
      */
     pub fn render_in(&self, scene: &Scene, file_name: &str, depth: usize, thread_count: usize) {
         let mut buf = Vec::with_capacity(self.x * self.y * 3);
-        let arc_self = Arc::from(self);
-        let scene = Arc::from(scene);
 
         let start = std::time::Instant::now();
         println!("render scene...");
 
-        crossbeam::scope(|scope| {
-            let mod_zero = (arc_self.y % thread_count).min(1);
-            let step = arc_self.y / thread_count + mod_zero;
+        std::thread::scope(|scope| {
+            let mod_zero = (self.y % thread_count).min(1);
+            let step = self.y / thread_count + mod_zero;
             let mut threads = vec![];
 
             for thread_id in 0..thread_count {
                 let start_row = thread_id * step;
                 let stop_row = (thread_id + 1) * step;
 
-                let scene = scene.clone();
-                let arc_self = arc_self.clone();
-
-                threads.push(if arc_self.flags & Camera::ANTI_ALIASING != 0 {
-                    scope.spawn(move |_scope| {
+                threads.push(if self.flags & Camera::ANTI_ALIASING != 0 {
+                    scope.spawn(move || {
                         let offsets = [(-0.25, -0.25), (0.25, -0.25), (-0.25, 0.25), (0.25, 0.25)];
-                        let mut buf = Vec::with_capacity(step * arc_self.x);
+                        let mut buf = Vec::with_capacity(step * self.x);
 
-                        for y in (start_row..stop_row.min(arc_self.y)).map(|y| y as f32) {
-                            for x in (0..arc_self.x).map(|x| x as f32) {
+                        for y in (start_row..stop_row.min(self.y)).map(|y| y as f32) {
+                            for x in (0..self.x).map(|x| x as f32) {
                                 buf.push({
-                                    let mut sr = 0;
-                                    let mut sg = 0;
-                                    let mut sb = 0;
+                                    let mut avg = Color::default();
 
                                     for (ox, oy) in &offsets {
-                                        let ray = arc_self.local_to_global_ray(&arc_self.get_ray(x + ox, y + oy));
+                                        let ray = self.local_to_global_ray(&self.get_ray(x + ox, y + oy));
                                         let mut impact = Point::default();
 
-                                        let Color { red, green, blue } = match scene.closer(&ray, &mut impact) {
+                                        avg += match scene.closer(&ray, &mut impact) {
                                             Some(object) => self.impact_color(&ray, object, &impact, &scene, depth),
                                             None => scene.background(),
-                                        };
-
-                                        sr += red as u16;
-                                        sg += green as u16;
-                                        sb += blue as u16;
+                                        } * 0.25;
                                     }
 
-                                    Color::new((sr / 4) as u8, (sg / 4) as u8, (sb / 4) as u8)
+                                    avg
                                 });
                             }
                         }
@@ -101,13 +89,13 @@ impl Camera {
                         buf
                     })
                 } else {
-                    scope.spawn(move |_scope| {
-                        let mut buf = Vec::with_capacity(step * arc_self.x);
+                    scope.spawn(move || {
+                        let mut buf = Vec::with_capacity(step * self.x);
 
-                        for y in (start_row..stop_row.min(arc_self.y)).map(|y| y as f32) {
-                            for x in (0..arc_self.x).map(|x| x as f32) {
+                        for y in (start_row..stop_row.min(self.y)).map(|y| y as f32) {
+                            for x in (0..self.x).map(|x| x as f32) {
                                 buf.push({
-                                    let ray = arc_self.local_to_global_ray(&arc_self.get_ray(x, y));
+                                    let ray = self.local_to_global_ray(&self.get_ray(x, y));
                                     let mut impact = Point::default();
 
                                     match scene.closer(&ray, &mut impact) {
@@ -130,7 +118,7 @@ impl Camera {
                     buf.extend(pix.to_array());
                 }
             }
-        }).unwrap();
+        });
 
         let dur = start.elapsed().as_secs_f32();
         println!("scene rendered in {:.2} sec!", dur);

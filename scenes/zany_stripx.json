@@ -29,6 +29,6 @@
     ],
     "config": {
         "output": "render/zany_stripx.png",
-        "threads": 8
+        "threads": 16
     }
 }

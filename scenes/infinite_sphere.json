@@ -1,8 +1,8 @@
 {
     "config": {
         "output": "render/infinit_sphere.png",
-        "threads": 18,
-        "depth": 75
+        "threads": 16,
+        "depth": 120
     },
     "camera": {
         "focal": {
@@ -24,7 +24,8 @@
                 "mat": {
                     "ambient": 50,
                     "diffuse": 190,
-                    "specular": 0
+                    "specular": 0,
+                    "alpha": 150
                 }
             }
         },{
