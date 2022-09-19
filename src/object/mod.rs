@@ -13,6 +13,8 @@ use crate::math::{
 use serde::{Deserialize, Deserializer, de::{Visitor, Error, MapAccess}};
 use rulinalg::matrix::Matrix;
 
+const GAP: f32 = 0.0005;
+
 pub trait Movable {
     fn tra(&self) -> &Matrix<f32>;
     fn tra_mut(&mut self) -> &mut Matrix<f32>;
@@ -133,11 +135,10 @@ pub trait Object: Movable {
     fn reflected_ray(&self, ray: &Ray, impact: &Point) -> Ray {
         let normal = self.normal(impact, ray.origin());
 
-        let gap = 0.0005;
         let dot = ray.vector().dot(normal.vector());
         let reflected = ray.vector() - normal.vector() * 2.0 * dot;
 
-        Ray::new(impact + reflected * gap, reflected)
+        Ray::new(impact + reflected * GAP, reflected)
     }
 
     fn refracted_ray(&self, ray: &Ray, impact: &Point) -> Ray {
@@ -159,8 +160,7 @@ pub trait Object: Movable {
             ray.vector() * eta + normal * (eta * cosi - k.sqrt())
         };
 
-        let gap = 0.0005;
-        Ray::new(impact + refracted * gap, refracted)
+        Ray::new(impact + refracted * GAP, refracted)
     }
 }
 

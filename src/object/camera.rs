@@ -38,14 +38,12 @@ impl Camera {
         self.flags = flags;
     }
 
-    /**
-     * ### Brief
-     * Allow to render the Scene **scene** in a file named **file_name**
-     *
-     * ### Params
-     * **scene** The scene to render
-     * **file_name** Target file
-     */
+    /// ### Brief
+    /// Allow to render the Scene **scene** in a file named **file_name**
+    ///
+    /// ### Params
+    /// **scene** The scene to render
+    /// **file_name** Target file
     pub fn render_in(&self, scene: &Scene, file_name: &str, depth: usize, thread_count: usize) {
         let mut buf = Vec::with_capacity(self.x * self.y * 3);
 
@@ -75,7 +73,7 @@ impl Camera {
                                         let ray = self.local_to_global_ray(&self.get_ray(x + ox, y + oy));
 
                                         avg += match scene.closer(&ray) {
-                                            Some((object, impact)) => self.impact_color(&ray, object, &impact, &scene, depth),
+                                            Some((object, impact)) => self.impact_color(&ray, object, &impact, scene, depth),
                                             None => scene.background(),
                                         } * 0.25;
                                     }
@@ -97,7 +95,7 @@ impl Camera {
                                     let ray = self.local_to_global_ray(&self.get_ray(x, y));
 
                                     match scene.closer(&ray) {
-                                        Some((object, impact)) => self.impact_color(&ray, object, &impact, &scene, depth),
+                                        Some((object, impact)) => self.impact_color(&ray, object, &impact, scene, depth),
                                         None => scene.background(),
                                     }
                                 });
@@ -112,14 +110,14 @@ impl Camera {
             for thread in threads {
                 let partial_data = thread.join().unwrap();
 
-                for pix in partial_data {
-                    buf.extend(pix.to_array());
-                }
+                buf.extend(
+                    partial_data.into_iter().flat_map(|pix| pix.to_array())
+                );
             }
         });
 
         let dur = start.elapsed().as_secs_f32();
-        println!("scene rendered in {:.2} sec!", dur);
+        println!("scene rendered in {dur:.2} sec!");
 
         std::fs::create_dir_all(std::path::Path::new(file_name).parent().unwrap()).unwrap();
         image::save_buffer(file_name, buf.as_slice(), self.x as u32, self.y as u32, image::ColorType::Rgb8).unwrap();

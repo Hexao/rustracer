@@ -33,8 +33,8 @@ where T: Mul<f32, Output = f32> + Add<f32, Output = f32> + Copy {
         assert!(self.rows() == 4 && self.cols() == 4);
         let mut r = [0.0, 0.0, 0.0, 0.0];
 
-        for (id, col) in self.row_iter().enumerate() {
-            r[id] = col[0] * rhs.x + col[1] * rhs.y + col[2] * rhs.z + col[3] * rhs.w;
+        for (id, row) in self.row_iter().enumerate() {
+            r[id] = row[0] * rhs.x + row[1] * rhs.y + row[2] * rhs.z + row[3] * rhs.w;
         }
 
         HCoord::new(r[0], r[1], r[2], r[3])
