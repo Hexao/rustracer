@@ -124,7 +124,7 @@ pub trait Movable {
 }
 
 pub trait Object: Movable {
-    fn intersect(&self, ray: &Ray, impact: &mut Point) -> bool;
+    fn intersect(&self, ray: &Ray) -> Option<Point>;
     fn normal(&self, at: &Point, observer: &Point) -> Ray;
     fn material_at(&self, impact: &Point) -> Material;
     fn outter_normal(&self, impact: &Point) -> Point;

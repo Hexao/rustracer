@@ -45,15 +45,17 @@ impl Movable for Plane {
 }
 
 impl Object for Plane {
-    fn intersect(&self, ray: &Ray, impact: &mut Point) -> bool {
+    fn intersect(&self, ray: &Ray) -> Option<Point> {
         let ray = self.global_to_local_ray(ray);
-
         let coef = -ray.origin().z / ray.vector().z;
-        *impact = self.local_to_global_point(
-            &(ray.origin() + ray.vector() * coef)
-        );
 
-        coef > 0.0
+        if coef > 0.0 {
+            Some(self.local_to_global_point(
+                &(ray.origin() + ray.vector() * coef)
+            ))
+        } else {
+            None
+        }
     }
 
     fn normal(&self, at: &Point, observer: &Point) -> Ray {

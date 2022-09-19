@@ -45,14 +45,17 @@ impl Movable for Square {
 }
 
 impl Object for Square {
-    fn intersect(&self, ray: &Ray, impact: &mut Point) -> bool {
+    fn intersect(&self, ray: &Ray) -> Option<Point> {
         let ray = self.global_to_local_ray(ray);
 
         let coef = -ray.origin().z / ray.vector().z;
         let local_impact = ray.origin() + ray.vector() * coef;
-        *impact = self.local_to_global_point(&local_impact);
 
-        coef > 0.0 && local_impact.x.abs() <= 1.0 && local_impact.y.abs() <= 1.0
+        if coef > 0.0 && local_impact.x.abs() <= 1.0 && local_impact.y.abs() <= 1.0 {
+            Some(self.local_to_global_point(&local_impact))
+        } else {
+            None
+        }
     }
 
     fn normal(&self, at: &Point, observer: &Point) -> Ray {

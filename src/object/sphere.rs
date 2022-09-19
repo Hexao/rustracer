@@ -47,7 +47,7 @@ impl Movable for Sphere {
 }
 
 impl Object for Sphere {
-    fn intersect(&self, ray: &Ray, impact: &mut Point) -> bool {
+    fn intersect(&self, ray: &Ray) -> Option<Point> {
         let ray = self.global_to_local_ray(ray);
         let (origin, vector) = ray.consume();
 
@@ -62,17 +62,16 @@ impl Object for Sphere {
             let x2 = (-b + d_sqrt) / (2.0 * a);
 
             let imp = if x1 < 0. && x2 < 0. {
-                return false;
+                None
             } else if x1 < x2 && x1 >= 0. {
-                origin + vector * x1
+                Some(origin + vector * x1)
             } else {
-                origin + vector * x2
-            };
+                Some(origin + vector * x2)
+            }?;
 
-            *impact = self.local_to_global_point(&imp);
-            true
+            Some(self.local_to_global_point(&imp))
         } else {
-            false
+            None
         }
     }
 

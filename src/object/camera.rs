@@ -73,10 +73,9 @@ impl Camera {
 
                                     for (ox, oy) in &offsets {
                                         let ray = self.local_to_global_ray(&self.get_ray(x + ox, y + oy));
-                                        let mut impact = Point::default();
 
-                                        avg += match scene.closer(&ray, &mut impact) {
-                                            Some(object) => self.impact_color(&ray, object, &impact, &scene, depth),
+                                        avg += match scene.closer(&ray) {
+                                            Some((object, impact)) => self.impact_color(&ray, object, &impact, &scene, depth),
                                             None => scene.background(),
                                         } * 0.25;
                                     }
@@ -96,10 +95,9 @@ impl Camera {
                             for x in (0..self.x).map(|x| x as f32) {
                                 buf.push({
                                     let ray = self.local_to_global_ray(&self.get_ray(x, y));
-                                    let mut impact = Point::default();
 
-                                    match scene.closer(&ray, &mut impact) {
-                                        Some(object) => self.impact_color(&ray, object, &impact, &scene, depth),
+                                    match scene.closer(&ray) {
+                                        Some((object, impact)) => self.impact_color(&ray, object, &impact, &scene, depth),
                                         None => scene.background(),
                                     }
                                 });
@@ -182,29 +180,27 @@ impl Camera {
 
         if depth > 0 {
             if material.alpha < 255 {
-                let mut impact_refraction = Point::default();
                 let refraction_ray = object.refracted_ray(ray, impact);
-                let object = scene.closer(&refraction_ray, &mut impact_refraction);
+                let closer = scene.closer(&refraction_ray);
 
                 let coef_refraction = material.alpha as f32 / 255.0;
-                diffuse = diffuse * coef_refraction + match object {
+                diffuse = diffuse * coef_refraction + match closer {
                     None => scene.background(),
-                    Some(object) => {
-                        self.impact_color(&refraction_ray, object, &impact_refraction, scene, depth - 1)
+                    Some((object, impact)) => {
+                        self.impact_color(&refraction_ray, object, &impact, scene, depth - 1)
                     }
                 } * (1.0 - coef_refraction);
             }
 
             if material.reflection > 0 {
-                let mut impact_reflection = Point::default();
                 let reflected_ray = object.reflected_ray(ray, impact);
-                let object = scene.closer(&reflected_ray, &mut impact_reflection);
+                let closer = scene.closer(&reflected_ray);
 
                 let coef_reflection = material.reflection as f32 / 255.0;
-                reflection = match object {
+                reflection = match closer {
                     None => scene.background(),
-                    Some(object) => {
-                        self.impact_color(&reflected_ray, object, &impact_reflection, scene, depth - 1)
+                    Some((object, impact)) => {
+                        self.impact_color(&reflected_ray, object, &impact, scene, depth - 1)
                     }
                 } * coef_reflection;
                 diffuse = diffuse * (1.0 - coef_reflection);

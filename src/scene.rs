@@ -29,20 +29,17 @@ impl Scene {
         self.ambient
     }
 
-    pub fn closer(&self, ray: &Ray, impact: &mut Point) -> Option<&dyn Object> {
+    pub fn closer(&self, ray: &Ray) -> Option<(&dyn Object, Point)> {
         let mut hit = None;
         let mut dist = f32::INFINITY;
 
         for obj in self.objects.iter() {
-            let mut new_impact = Point::default();
-
-            if obj.intersect(ray, &mut new_impact) {
-                let new_dist = (new_impact - ray.origin()).norm();
+            if let Some(impact) = obj.intersect(ray) {
+                let new_dist = (impact - ray.origin()).norm();
 
                 if new_dist < dist {
-                    *impact = new_impact;
                     dist = new_dist;
-                    hit = Some(obj.as_ref());
+                    hit = Some((obj.as_ref(), impact));
                 }
             }
         }
@@ -55,17 +52,16 @@ impl Scene {
         origin = origin + vector * 0.01;
 
         let ray = Ray::new(origin, vector);
-        let mut impact = Point::default();
-        let object = self.closer(&ray, &mut impact);
+        let closer = self.closer(&ray);
 
-        if point == &impact {
-            println!("recursive spot at depth {}", depth);
-            return Color::new_gray(255);
-        }
-
-        match object {
+        match closer {
             None => Color::new_gray(255),
-            Some(object) => {
+            Some((object, impact)) => {
+                if point == &impact {
+                    println!("recursive spot at depth {}", depth);
+                    return Color::new_gray(255);
+                }
+
                 let dist_light = light.distance(point);
                 let dist_object = (impact - point).norm();
 
