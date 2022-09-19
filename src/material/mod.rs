@@ -67,7 +67,7 @@ impl<'de> Deserialize<'de> for Box<dyn MatProvider> {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Color {
     pub red: u8,
     pub green: u8,
@@ -87,12 +87,6 @@ impl Color {
 
     pub fn to_array(self) -> [u8; 3] {
         [self.red, self.green, self.blue]
-    }
-}
-
-impl Default for Color {
-    fn default() -> Self {
-        Color::new_gray(0)
     }
 }
 

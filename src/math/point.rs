@@ -2,7 +2,7 @@ use crate::math::h_coord::HCoord;
 
 use serde::{Deserialize, Deserializer, de::{Visitor, Error, MapAccess, SeqAccess}};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub struct Point {
     pub x: f32,
     pub y: f32,
@@ -32,12 +32,6 @@ impl Point {
 
     pub fn dot(&self, rhs: &Point) -> f32 {
         self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
-    }
-}
-
-impl Default for Point {
-    fn default() -> Self {
-        Point { x: 0.0, y: 0.0, z: 0.0 }
     }
 }
 
